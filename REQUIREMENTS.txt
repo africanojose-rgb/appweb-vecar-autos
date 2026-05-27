@@ -1,0 +1,156 @@
+================================================================================
+  VECAR AUTOS — TITANIUM SHOWROOM PANEL
+  REQUERIMIENTOS DEL SISTEMA
+================================================================================
+
+1.  VISIÓN GENERAL
+    ----------------------------------------------------------------------------
+    Sistema de administración de inventario de vehículos para Titanium Showroom.
+    Permite gestionar el ciclo de vida de cada vehículo (desde ingreso hasta
+    venta), con control de documentos, fotografías, precios y estados.
+
+    Público objetivo: Administrador interno del concesionario.
+    Acceso: Privado, requiere autenticación.
+
+2.  REQUERIMIENTOS FUNCIONALES
+    ----------------------------------------------------------------------------
+
+    RF-01  AUTENTICACIÓN
+           - Inicio de sesión con correo electrónico y contraseña.
+           - Cierre de sesión.
+           - Protección del dashboard: sin sesión no se accede a los datos.
+
+    RF-02  GESTIÓN DE INVENTARIO
+           - Visualizar listado de vehículos en formato de tarjetas (cards).
+           - Ver métricas: disponibles, vendidos, en alistamiento.
+           - Agregar nuevo vehículo con formulario completo.
+           - Editar vehículo existente.
+           - Eliminar vehículo con confirmación.
+           - Cambiar entre vistas: "Todos", "Disponibles", "Vendidos".
+
+    RF-03  CAMPOS DEL VEHÍCULO
+           - Marca, línea, versión, año, cilindraje, transmisión.
+           - Placa, kilometraje, color, matrícula (ciudad).
+           - Precio de compra y precio de venta (formato COP).
+           - Fechas: SOAT y RTM (con alertas por vencimiento).
+           - Estado: DISPONIBLE, VIRTUAL, SEPARADO, ALISTAMIENTO, VENDIDO.
+           - Prenda (sí/no), reporte (sí/no), visible web.
+           - Ubicación (bodega).
+           - Descripción / especificaciones.
+           - Fotografías (hasta 10 por vehículo).
+
+    RF-04  FOTOGRAFÍAS
+           - Subir múltiples fotografías desde el dispositivo.
+           - Previsualización antes de guardar.
+           - Compresión automática (800px máximo, calidad 70%).
+           - Almacenamiento en base64 dentro de Firestore.
+           - Ciclado de fotos en la tarjeta (click para ver siguiente).
+           - Eliminación individual de fotos.
+           - Validación de tipo (JPG, PNG, WebP, AVIF) y tamaño (< 5MB).
+           - Límite de 10 fotos por vehículo.
+
+    RF-05  FILTROS Y BÚSQUEDA
+           - Búsqueda por texto (marca, línea, placa).
+           - Filtro por transmisión (Automática, Mecánica).
+           - Filtro por estado.
+           - Filtro "Solo alertas" (SOAT o RTM próximos a vencer).
+           - Filtro por "Próximos a vencer" (SOAT o RTM ≤ 30 días).
+           - Limpiar todos los filtros.
+           - Panel de filtros desplegable.
+
+    RF-06  NOTIFICACIONES Y ALERTAS
+           - Indicador visual de documentos próximos a vencer (≤ 30 días).
+           - Indicador visual de documentos vencidos.
+           - Modal de notificaciones con listado de vehículos en alerta.
+           - Badge de contador en el botón de notificaciones.
+
+    RF-07  IMPORTACIÓN DE DATOS
+           - Importar inventario desde datos semilla precargados.
+           - Conversión automática del esquema antiguo al nuevo.
+
+    RF-08  PERSISTENCIA
+           - Los datos se almacenan en Firestore (Firebase).
+           - Sincronización en tiempo real (onSnapshot).
+           - Las fotografías se almacenan como base64 en Firestore.
+
+3.  REQUERIMIENTOS NO FUNCIONALES
+    ----------------------------------------------------------------------------
+
+    RNF-01  ARQUITECTURA
+            - Aplicación 100% frontend (HTML + CSS + JavaScript).
+            - Sin servidor propio. Se abre con doble-click (file://).
+            - Backend como servicio: Firebase (Auth + Firestore).
+
+    RNF-02  SEGURIDAD
+            - Autenticación obligatoria para cualquier operación.
+            - Reglas de Firestore: solo usuarios autenticados pueden leer/escribir.
+            - No se almacenan claves ni secretos en el cliente.
+            - Las contraseñas se manejan exclusivamente en Firebase Auth.
+
+    RNF-03  RENDIMIENTO
+            - Carga inicial del listado vía onSnapshot (tiempo real).
+            - Compresión de imágenes antes de almacenar (800px / 70%).
+            - Límite de 10 fotos por vehículo para evitar documentos > 1MB.
+            - Lazy loading en imágenes de tarjetas.
+
+    RNF-04  COMPATIBILIDAD
+            - Funciona en navegadores modernos (Chrome, Firefox, Edge, Safari).
+            - Diseño responsive (mobile-first).
+            - Modo oscuro (clase "dark" en el HTML).
+            - Sin dependencias de servidor local (file://).
+
+    RNF-05  MANTENIBILIDAD
+            - Código separado en módulos: firebase/, app/, styles/.
+            - CSS con Tailwind CSS (vía CLI) + estilos personalizados.
+            - Comentarios de sección en cada archivo.
+            - Variables globales para configuración (Firebase, límites de imagen).
+
+4.  RESTRICCIONES TÉCNICAS
+    ----------------------------------------------------------------------------
+
+    RT-01  Plan gratuito de Firebase (Spark). No incluye Firebase Storage.
+    RT-02  Las imágenes se almacenan como base64 en Firestore.
+    RT-03  Máximo 1MB por documento en Firestore (~5-8 fotos comprimidas).
+    RT-04  No se requiere instalación de dependencias para el usuario final.
+    RT-05  El proyecto se sirve desde file:// sin servidor HTTP.
+
+5.  STACK TECNOLÓGICO
+    ----------------------------------------------------------------------------
+
+    Frontend
+      - HTML5
+      - Tailwind CSS 3.x (generado vía CLI)
+      - CSS3 personalizado (glassmorphism, animaciones)
+      - JavaScript (ES5+ compat, sin bundler)
+
+    Backend (Firebase)
+      - Firebase Auth (email/password)
+      - Firestore (base de datos en tiempo real)
+      - Firebase SDK compat v10.14.1 (CDN)
+
+    Fuentes
+      - Hanken Grotesk (UI)
+      - Sora (títulos)
+      - Material Symbols (iconos)
+
+6.  ESTRUCTURA DEL PROYECTO
+    ----------------------------------------------------------------------------
+
+    index.html                  ← Entry point (doble-click)
+    package.json                ← Tailwind CLI build
+    tailwind.config.js          ← Tema personalizado Tailwind
+    styles/
+      input.css                 ← Directivas @tailwind
+      output.css                ← Generado por Tailwind CLI
+      main.css                  ← Estilos personalizados
+    firebase/
+      config.js                 ← Inicialización Firebase
+      auth.js                   ← Funciones de autenticación
+      firestore.js              ← CRUD de vehículos
+      storage.js                ← Compresión de imágenes
+    app/
+      utils.js                  ← Formateo, validación, sanitización
+      ui.js                     ← Renderizado, modales, filtros
+      main.js                   ← Orquestador, eventos, flujo
+    logo_empresa/
+      logo.jpg                  ← Logotipo de la empresa

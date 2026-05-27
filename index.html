@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+  <title>Vecar Autos | Panel de Control</title>
+
+  <link href="styles/output.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&amp;family=Hanken+Grotesk:wght@400;700&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+  <link href="styles/main.css" rel="stylesheet"/>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+</head>
+<body class="min-h-screen pb-24">
+
+  <!-- ==================== ALERT CONTAINER ==================== -->
+  <div id="alertContainer" class="fixed top-4 left-4 right-4 z-[300] max-w-lg mx-auto space-y-2 pointer-events-none">
+  </div>
+
+  <!-- ==================== LOGIN ==================== -->
+  <div id="loginView" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black overflow-y-auto">
+    <div class="absolute top-1/4 left-1/4 w-80 h-80 rounded-full bg-electric-blue/10 blur-[100px] pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-status-gold/5 blur-[120px] pointer-events-none"></div>
+
+    <div class="glass-card w-full max-w-md p-8 rounded-2xl relative overflow-hidden transition-all duration-300 transform scale-100">
+      <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-electric-blue to-transparent"></div>
+
+      <div class="flex flex-col items-center mb-8 text-center">
+        <div class="relative mb-4">
+          <div class="absolute -inset-6 bg-electric-blue/5 blur-3xl rounded-full pointer-events-none"></div>
+          <img src="logo_empresa/logo.jpg" alt="Vecar Autos" class="h-16 w-auto rounded-xl glass-card p-2 logo-glow"/>
+        </div>
+        <p class="text-body-sm text-on-secondary-container tracking-wide font-sora">VERCAR AUTOS</p>
+      </div>
+
+      <form id="loginForm" class="space-y-6">
+        <div class="space-y-2">
+          <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase">CORREO ELECTRÓNICO</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-secondary-container text-[20px]">mail</span>
+            <input required type="email" id="loginEmail" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl pl-10 pr-4 py-3 text-body-sm text-on-surface focus:border-electric-blue focus:ring-1 focus:ring-electric-blue transition-all placeholder:text-on-tertiary/40" placeholder="admin@vecarautos.com"/>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase">CONTRASEÑA</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-secondary-container text-[20px]">lock</span>
+            <input required type="password" id="loginPassword" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl pl-10 pr-4 py-3 text-body-sm text-on-surface focus:border-electric-blue focus:ring-1 focus:ring-electric-blue transition-all placeholder:text-on-tertiary/40" placeholder="••••••••"/>
+          </div>
+        </div>
+
+        <div id="loginErrorMessage" class="text-error text-xs hidden bg-error-container/30 border border-error-container/50 px-3 py-2 rounded-xl items-center gap-2">
+          <span class="material-symbols-outlined text-sm">error</span>
+          <span id="loginErrorText">Credenciales inválidas</span>
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-electric-blue to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-electric-blue/20 flex items-center justify-center gap-2 active:scale-95 transition-all text-body-md tracking-wider glow-primary">
+          <span>INICIAR SESIÓN</span>
+          <span id="loginSpinner" class="material-symbols-outlined animate-spin text-[20px] hidden">progress_activity</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== DASHBOARD ==================== -->
+  <div id="mainDashboardView" class="hidden opacity-0 transition-opacity duration-500">
+
+    <!-- Top Bar -->
+    <nav class="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-outline-variant/20">
+      <div class="flex justify-between items-center px-4 py-4 max-w-container-max mx-auto">
+        <img src="logo_empresa/logo.jpg" alt="Vecar Autos" class="h-8 w-auto rounded-lg logo-glow"/>
+        <div class="flex items-center gap-3">
+          <button id="notifBtn" class="bg-surface-container p-2 rounded-full border border-outline-variant/30 flex items-center justify-center text-on-surface-variant relative hover:text-white active:scale-95 transition-transform" aria-label="Notificaciones">
+            <span class="material-symbols-outlined text-[20px]">notifications</span>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-electric-blue"></span>
+          </button>
+          <button id="logoutBtn" class="bg-surface-container/60 px-3 py-1.5 rounded-full border border-outline-variant/30 flex items-center gap-2 text-body-sm text-on-surface-variant hover:text-white" aria-label="Cerrar sesión">
+            <span class="material-symbols-outlined text-[18px]">logout</span>
+            <span class="hidden sm:inline">Cerrar Sesión</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-20 px-4 space-y-6 max-w-lg mx-auto">
+
+      <!-- Stats -->
+      <section class="grid grid-cols-3 gap-3">
+        <div class="glass-card p-3 rounded-xl flex flex-col items-center justify-center text-center">
+          <span class="text-[10px] font-bold tracking-widest text-on-secondary-container mb-1 uppercase">Disponibles</span>
+          <span id="metricActive" class="text-2xl font-bold text-electric-blue font-sora">0</span>
+        </div>
+        <div class="glass-card p-3 rounded-xl flex flex-col items-center justify-center text-center">
+          <span class="text-[10px] font-bold tracking-widest text-on-secondary-container mb-1 uppercase">Vendidos</span>
+          <span id="metricSold" class="text-2xl font-bold text-status-gold font-sora">0</span>
+        </div>
+        <div class="glass-card p-3 rounded-xl flex flex-col items-center justify-center text-center">
+          <span class="text-[10px] font-bold tracking-widest text-on-secondary-container mb-1 uppercase">Alistam.</span>
+          <span id="metricPending" class="text-2xl font-bold text-on-surface font-sora">0</span>
+        </div>
+      </section>
+
+      <!-- Search & Filters -->
+      <div class="space-y-3">
+        <div class="flex gap-2">
+          <div class="relative flex-grow">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-secondary-container text-[20px]">search</span>
+            <input type="text" id="searchInput" class="w-full bg-surface-container-high border-none rounded-xl pl-10 pr-4 py-3 text-body-sm text-on-surface focus:ring-1 focus:ring-electric-blue placeholder:text-on-tertiary/40 transition-all" placeholder="Buscar por marca, placa, color..."/>
+          </div>
+          <button id="filterBtn" class="bg-surface-container-high p-3 rounded-xl border border-outline-variant/30 flex items-center justify-center hover:bg-surface-container-highest hover:text-white transition-colors" aria-label="Filtros">
+            <span class="material-symbols-outlined">tune</span>
+          </button>
+        </div>
+
+        <div id="filterDrawer" class="hidden glass-card p-4 rounded-xl space-y-4 animate-in fade-in duration-200">
+          <div class="flex justify-between items-center border-b border-outline-variant/20 pb-2">
+            <h4 class="font-bold text-xs tracking-wider uppercase text-on-surface">Filtros Avanzados</h4>
+            <button id="clearFilterBtn" class="text-xs text-electric-blue">Restablecer</button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-on-secondary-container mb-1">TRANSMISIÓN</label>
+              <select id="filterTr" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg text-xs py-2 px-2 text-on-surface">
+                <option value="">Cualquiera</option>
+                <option value="AT">Automática (AT)</option>
+                <option value="MC">Mecánica (MC)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-on-secondary-container mb-1">ESTADO</label>
+              <select id="filterEstado" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg text-xs py-2 px-2 text-on-surface">
+                <option value="">Cualquiera</option>
+                <option value="DISPONIBLE">Disponible</option>
+                <option value="VIRTUAL">Virtual</option>
+                <option value="SEPARADO">Separado</option>
+                <option value="ALISTAMIENTO">Alistamiento</option>
+                <option value="VENDIDO">Vendido</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-on-secondary-container mb-1">ALERTAS SOAT/RTM</label>
+              <select id="filterAlerts" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg text-xs py-2 px-2 text-on-surface">
+                <option value="">Todos</option>
+                <option value="expiring">Vence en 30 días</option>
+                <option value="expired">Vencidos</option>
+                <option value="any">Con cualquier alerta</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventory -->
+      <section class="space-y-4">
+        <div class="flex justify-between items-center">
+          <div class="flex items-baseline gap-2">
+            <h2 class="font-bold text-lg font-sora">Inventario</h2>
+            <span id="resultCount" class="text-xs text-on-secondary-container">(Cargando...)</span>
+          </div>
+          <button id="addVehicleBtn" class="text-electric-blue font-bold text-xs tracking-wider flex items-center gap-1 py-1 px-2 rounded-lg bg-electric-blue/10 border border-electric-blue/20">
+            <span class="material-symbols-outlined text-[16px]">add</span> NUEVO VEHÍCULO
+          </button>
+        </div>
+
+        <div id="alertsBanner" class="hidden bg-amber-500/10 border border-amber-500/35 rounded-xl p-4 flex items-start gap-3 text-body-sm text-on-surface transition-all animate-in fade-in duration-300">
+          <span class="material-symbols-outlined text-amber-500 flex-shrink-0 mt-0.5 animate-pulse">warning</span>
+          <div class="flex-grow">
+            <p class="font-bold text-amber-500 text-[10px] tracking-widest uppercase mb-0.5 font-sora">Alertas de Trámites (SOAT/RTM)</p>
+            <p id="alertsBannerText" class="text-xs text-on-secondary-container leading-normal"></p>
+          </div>
+          <button id="filterExpiringBtn" class="text-xs text-electric-blue font-bold flex-shrink-0 self-center hover:underline bg-electric-blue/10 px-2 py-1 rounded">Ver Alertas</button>
+        </div>
+
+        <div id="inventoryContainer" class="space-y-4"></div>
+
+        <div id="emptyState" class="hidden glass-card p-8 rounded-xl flex flex-col items-center justify-center text-center space-y-3">
+          <span class="material-symbols-outlined text-4xl text-on-secondary-container">no_cars</span>
+          <p class="text-body-sm text-on-secondary-container font-semibold">No se encontraron vehículos.</p>
+          <button id="emptyResetBtn" class="text-xs text-electric-blue border border-electric-blue/30 px-3 py-1.5 rounded-lg">Mostrar Todos</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Nav -->
+    <nav class="fixed bottom-0 w-full bg-surface/85 backdrop-blur-2xl border-t border-outline-variant/20 px-6 py-3 flex justify-between items-center z-50">
+      <button data-tab="all" class="flex flex-col items-center gap-1 text-electric-blue" aria-label="Dashboard">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+        <span class="text-[10px] font-bold tracking-wider">DASHBOARD</span>
+      </button>
+      <button data-tab="available" class="flex flex-col items-center gap-1 text-on-secondary-container" aria-label="Disponibles">
+        <span class="material-symbols-outlined">directions_car</span>
+        <span class="text-[10px] font-bold tracking-wider">DISPONIBLE</span>
+      </button>
+
+      <button id="fabAddBtn" class="bg-electric-blue w-14 h-14 rounded-full -mt-9 shadow-lg shadow-electric-blue/40 flex items-center justify-center text-white scale-110 active:scale-95 hover:scale-115 hover:rotate-90 transition-all glow-primary" aria-label="Agregar vehículo">
+        <span class="material-symbols-outlined text-3xl">add</span>
+      </button>
+
+      <button data-tab="sold" class="flex flex-col items-center gap-1 text-on-secondary-container" aria-label="Vendidos">
+        <span class="material-symbols-outlined">sell</span>
+        <span class="text-[10px] font-bold tracking-wider">VENDIDO</span>
+      </button>
+      <button id="configBtn" class="flex flex-col items-center gap-1 text-on-secondary-container" aria-label="Configuración">
+        <span class="material-symbols-outlined">settings</span>
+        <span class="text-[10px] font-bold tracking-wider">CONFIG</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ==================== VEHICLE MODAL ==================== -->
+  <div id="vehicleModal" class="fixed inset-0 z-[100] bg-background hidden overflow-y-auto animate-in slide-in-from-bottom duration-300">
+    <header class="sticky top-0 bg-surface z-10 px-4 py-4 border-b border-outline-variant/30 flex items-center justify-between">
+      <button id="modalCloseBtn" class="text-on-surface-variant flex items-center" data-action="close-modal" aria-label="Cerrar">
+        <span class="material-symbols-outlined text-[24px]">close</span>
+      </button>
+      <h2 id="modalTitle" class="font-bold text-base text-on-surface font-sora">Nuevo Vehículo</h2>
+      <button id="modalPublishBtn" class="text-electric-blue font-bold text-sm">Guardar</button>
+    </header>
+
+    <div class="max-w-lg mx-auto p-6 space-y-6">
+
+      <!-- Photos -->
+      <div class="space-y-3">
+        <div class="flex justify-between items-baseline">
+          <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase">FOTOS DEL VEHÍCULO</label>
+          <span class="text-[10px] text-on-secondary-container">Sube hasta 10 fotos</span>
+        </div>
+
+        <div class="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
+          <div id="addPhotoBtn" class="w-28 h-28 flex-shrink-0 border border-dashed border-outline-variant/60 rounded-xl flex flex-col items-center justify-center bg-surface-container-low text-on-secondary-container cursor-pointer hover:border-electric-blue hover:text-white transition-colors">
+            <span class="material-symbols-outlined text-3xl">add_a_photo</span>
+            <span class="text-[10px] mt-1 font-bold">Cargar Foto</span>
+            <input type="file" id="vehicleFileInput" accept="image/*" multiple class="hidden"/>
+          </div>
+          <div id="photosContainer" class="flex gap-3"></div>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form id="vehicleForm" class="space-y-5">
+        <input type="hidden" id="editVehicleId" value=""/>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">MARCA</label>
+            <input required type="text" id="formMarca" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors placeholder:text-on-tertiary/30" placeholder="Ej. AUDI"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">LÍNEA</label>
+            <input required type="text" id="formLinea" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors placeholder:text-on-tertiary/30" placeholder="Ej. Q5"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">VERSIÓN</label>
+            <input type="text" id="formVersion" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors placeholder:text-on-tertiary/30" placeholder="Ej. Sportback Hybrid"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">PLACA</label>
+            <input required type="text" id="formPlaca" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface uppercase transition-colors placeholder:text-on-tertiary/30" placeholder="Ej. NSZ528"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">AÑO</label>
+            <input required type="number" id="formAnio" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors" placeholder="2023" min="1900" max="2100"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">COLOR</label>
+            <input required type="text" id="formColor" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors placeholder:text-on-tertiary/30" placeholder="Ej. Plata"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">CILINDRAJE</label>
+            <input type="text" id="formCilindraje" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors" placeholder="Ej. 2.0"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">KILOMETRAJE</label>
+            <input required type="number" id="formKilometraje" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors" placeholder="24000"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">MATRÍCULA</label>
+            <input type="text" id="formMatricula" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors placeholder:text-on-tertiary/30" placeholder="Ej. Bogotá"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">TRANSMISIÓN</label>
+            <select id="formTransmision" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg text-xs py-3 px-2 text-on-surface">
+              <option value="AT">Automática (AT)</option>
+              <option value="MC">Mecánica (MC)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">UBICACIÓN</label>
+            <input type="text" id="formUbicacion" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors" value="129"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">ESTADO</label>
+            <select id="formEstado" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg text-xs py-3 px-2 text-on-surface font-semibold text-electric-blue">
+              <option value="DISPONIBLE">🟢 DISPONIBLE</option>
+              <option value="VIRTUAL">🔵 VIRTUAL</option>
+              <option value="SEPARADO">🟠 SEPARADO</option>
+              <option value="ALISTAMIENTO">🟡 ALISTAMIENTO</option>
+              <option value="VENDIDO">🏆 VENDIDO</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1">PRECIO COMPRA (COP)</label>
+            <input type="number" id="formPrecioCompra" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors" placeholder="0"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1">PRECIO VENTA (COP)</label>
+            <input required type="number" id="formPrecioVenta" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors" placeholder="139900000"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">SOAT VENCE</label>
+            <input type="text" id="formSoat" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors placeholder:text-on-tertiary/30" placeholder="Ej. 19/11/2026"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">RTM VENCE</label>
+            <input type="text" id="formRtm" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-3 text-on-surface transition-colors placeholder:text-on-tertiary/30" placeholder="Ej. 13/06/2026"/>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1">REPORTE</label>
+            <select id="formReporte" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg text-xs py-2.5 px-2 text-on-surface">
+              <option value="NO">No</option>
+              <option value="SI">Sí</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1">PRENDA</label>
+            <select id="formPrenda" class="w-full bg-surface-container-low border border-outline-variant/30 rounded-lg text-xs py-2.5 px-2 text-on-surface">
+              <option value="NO">No</option>
+              <option value="SI">Sí (Deuda/Lien)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between p-4 bg-surface-container rounded-xl border border-outline-variant/30">
+          <div>
+            <span class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase">Visible en Web</span>
+            <span class="text-[10px] text-on-secondary-container">Mostrar este vehículo en el sitio público</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="formVisibleWeb" checked class="sr-only peer"/>
+            <div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-electric-blue"></div>
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold tracking-widest text-on-secondary-container uppercase mb-1.5">DESCRIPCIÓN</label>
+          <textarea id="formDescripcion" class="w-full bg-surface-container-high border-b border-outline-variant/40 focus:border-electric-blue focus:ring-0 px-2 py-2 text-on-surface transition-colors placeholder:text-on-tertiary/30" placeholder="Detalles del vehículo, equipamiento adicional..." rows="3"></textarea>
+        </div>
+
+        <button type="button" id="saveVehicleBtn" class="w-full bg-gradient-to-r from-electric-blue to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all text-body-sm glow-primary mt-6">
+          <span class="material-symbols-outlined text-[20px]">save</span> GUARDAR VEHÍCULO
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== CONFIG MODAL ==================== -->
+  <div id="configModal" class="fixed inset-0 z-[100] bg-background hidden overflow-y-auto animate-in slide-in-from-bottom duration-300">
+    <header class="sticky top-0 bg-surface z-10 px-4 py-4 border-b border-outline-variant/30 flex items-center justify-between">
+      <button id="configCloseBtn" class="text-on-surface-variant" data-action="close-modal" aria-label="Cerrar">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <h2 class="font-bold text-base text-on-surface font-sora">Configuración General</h2>
+      <span class="w-6"></span>
+    </header>
+
+    <div class="max-w-lg mx-auto p-6 space-y-6">
+      <div class="glass-card p-6 rounded-2xl space-y-4">
+        <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-electric-blue">database</span> Cargar Base de Datos
+        </h3>
+        <p class="text-body-sm text-on-secondary-container">
+          Importa el inventario semilla (14 vehículos) directamente a Firestore. Útil para empezar si la colección está vacía.
+        </p>
+        <button id="seedBtn" class="w-full bg-surface-container hover:bg-surface-container-highest border border-outline-variant/50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all text-body-sm">
+          <span class="material-symbols-outlined">download</span> IMPORTAR INVENTARIO REAL
+        </button>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl space-y-4 border-outline-variant/30">
+        <h3 class="text-sm font-bold text-on-surface uppercase tracking-wider">Conexión Firebase</h3>
+        <p class="text-xs text-on-secondary-container leading-relaxed">
+          Este panel está conectado a <strong class="text-on-surface">Firebase Firestore</strong> con autenticación por email/contraseña. Los datos se sincronizan en tiempo real.
+        </p>
+        <div class="flex items-center justify-between pt-2 border-t border-outline-variant/20 text-xs text-on-secondary-container">
+          <span>Proyecto:</span>
+          <span class="font-bold text-electric-blue">vercar-autos</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DELETE DIALOG ==================== -->
+  <div id="deleteDialog" class="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-sm p-6 rounded-2xl space-y-6">
+      <div class="flex flex-col items-center text-center space-y-2">
+        <span class="material-symbols-outlined text-error text-4xl">delete_forever</span>
+        <h3 class="font-bold text-base text-on-surface font-sora">¿Eliminar Vehículo?</h3>
+        <p class="text-xs text-on-secondary-container">Esta acción es irreversible y removerá el vehículo del inventario.</p>
+      </div>
+      <div class="flex gap-3">
+        <button id="deleteCancelBtn" class="flex-1 bg-surface-container border border-outline-variant/30 text-on-surface font-bold py-3 rounded-xl text-xs active:scale-95 transition-all">Cancelar</button>
+        <button id="confirmDeleteBtn" class="flex-1 bg-error hover:bg-red-700 text-white font-bold py-3 rounded-xl text-xs active:scale-95 transition-all">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="firebase/config.js"></script>
+  <script src="firebase/auth.js"></script>
+  <script src="firebase/firestore.js"></script>
+  <script src="firebase/storage.js"></script>
+  <script src="app/utils.js"></script>
+  <script src="app/ui.js"></script>
+  <script src="app/main.js"></script>
+</body>
+</html>
