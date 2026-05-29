@@ -3,6 +3,20 @@
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<<<<<<< HEAD
+=======
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://www.gstatic.com https://cdn.sheetjs.com;
+    style-src 'self' https://fonts.googleapis.com 'unsafe-inline';
+    font-src https://fonts.gstatic.com;
+    img-src 'self' data: https://images.unsplash.com https://www.gstatic.com;
+    connect-src https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://firestore.googleapis.com;
+    form-action 'self';
+    base-uri 'self';
+    object-src 'none';
+  ">
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
   <title>Vecar Autos | Panel de Control</title>
 
   <link href="styles/output.css" rel="stylesheet"/>
@@ -10,9 +24,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
   <link href="styles/main.css" rel="stylesheet"/>
 
+<<<<<<< HEAD
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+=======
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" integrity="sha384-ZaR6mWzmJtrRibZ1Vm7SoHFr8OXjyAuGAXalGDKqbxFT18oi/z+oZLIRFkpeNor1" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" integrity="sha384-I1LYojsZ5RM1cOda44Z2h42Qa6YfsQ1XkXxREnhp4ueYBR/4d1pG1K+NZM537Vsj" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" integrity="sha384-Ke0FJhH7LyRqDxZ0wt+/OXV38yfQVu7g9VPEEGjYmB4RVOY/ta04uecRhsMwT7V3" crossorigin="anonymous"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
 </head>
 <body class="min-h-screen pb-24">
 
@@ -392,6 +413,7 @@
     <div class="max-w-lg mx-auto p-6 space-y-6">
       <div class="glass-card p-6 rounded-2xl space-y-4">
         <h3 class="text-base font-bold text-on-surface flex items-center gap-2">
+<<<<<<< HEAD
           <span class="material-symbols-outlined text-electric-blue">database</span> Cargar Base de Datos
         </h3>
         <p class="text-body-sm text-on-secondary-container">
@@ -400,6 +422,65 @@
         <button id="seedBtn" class="w-full bg-surface-container hover:bg-surface-container-highest border border-outline-variant/50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all text-body-sm">
           <span class="material-symbols-outlined">download</span> IMPORTAR INVENTARIO REAL
         </button>
+=======
+          <span class="material-symbols-outlined text-electric-blue">database</span> Importar desde Archivo
+        </h3>
+        <p class="text-body-sm text-on-secondary-container">
+          Sube un archivo Excel (.xlsx) o SQL con sentencias INSERT INTO para alimentar la base de datos en Firestore.
+        </p>
+
+        <!-- Format Toggle -->
+        <div class="flex gap-3">
+          <label class="flex-1 relative">
+            <input type="radio" name="importFormat" id="importFormatExcel" value="excel" checked class="sr-only peer">
+            <div class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-outline-variant/30 bg-surface-container-low text-on-secondary-container font-bold text-xs cursor-pointer peer-checked:border-electric-blue peer-checked:text-electric-blue peer-checked:bg-electric-blue/10 transition-all">
+              <span class="material-symbols-outlined text-[18px]">table_chart</span> EXCEL
+            </div>
+          </label>
+          <label class="flex-1 relative">
+            <input type="radio" name="importFormat" id="importFormatSql" value="sql" class="sr-only peer">
+            <div class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-outline-variant/30 bg-surface-container-low text-on-secondary-container font-bold text-xs cursor-pointer peer-checked:border-electric-blue peer-checked:text-electric-blue peer-checked:bg-electric-blue/10 transition-all">
+              <span class="material-symbols-outlined text-[18px]">code</span> SQL
+            </div>
+          </label>
+        </div>
+        <p id="importFormatHint" class="text-[10px] text-on-secondary-container">
+          Archivo Excel (.xlsx o .xls) con los datos de vehículos
+        </p>
+
+        <!-- Drop Zone -->
+        <div id="importDropZone" class="border-2 border-dashed border-outline-variant/40 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-electric-blue/50 hover:bg-electric-blue/5 transition-all">
+          <span class="material-symbols-outlined text-4xl text-on-secondary-container mb-2">cloud_upload</span>
+          <p class="text-body-sm text-on-secondary-container font-semibold">Arrastra un archivo aquí o haz clic para seleccionar</p>
+          <p class="text-[10px] text-on-secondary-container mt-1">Solo .xlsx, .xls o .sql</p>
+          <input type="file" id="importFileInput" accept=".xlsx,.xls" class="hidden"/>
+        </div>
+
+        <!-- Progress -->
+        <div id="importProgressContainer" class="hidden space-y-3">
+          <div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+            <div id="importProgressBar" class="h-full bg-gradient-to-r from-electric-blue to-blue-700 rounded-full transition-all duration-300" style="width:0%"></div>
+          </div>
+          <p id="importProgressText" class="text-xs text-on-secondary-container text-center"></p>
+        </div>
+
+        <!-- Result -->
+        <div id="importResult" class="hidden text-xs space-y-1 p-3 bg-surface-container rounded-xl"></div>
+
+        <!-- Download Template -->
+        <button id="downloadTemplateBtn" class="w-full bg-surface-container hover:bg-surface-container-highest border border-outline-variant/50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all text-body-sm">
+          <span class="material-symbols-outlined text-[18px]">download</span> DESCARGAR PLANTILLA EXCEL
+        </button>
+
+        <hr class="border-outline-variant/20 my-2"/>
+
+        <button id="downloadBackupBtn" class="w-full bg-surface-container hover:bg-surface-container-highest border border-outline-variant/50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all text-body-sm">
+          <span class="material-symbols-outlined text-[18px]">backup</span> DESCARGAR BACKUP EXCEL
+        </button>
+        <p class="text-[10px] text-on-secondary-container text-center -mt-2">
+          Exporta el inventario actual en formato Excel compatible con la importación.
+        </p>
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
       </div>
 
       <div class="glass-card p-6 rounded-2xl space-y-4 border-outline-variant/30">

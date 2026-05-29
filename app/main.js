@@ -118,7 +118,11 @@ document.getElementById("configBtn").addEventListener("click", function () {
 document.getElementById("configCloseBtn").addEventListener("click", function () {
   closeModal("configModal");
 });
+<<<<<<< HEAD
 document.getElementById("seedBtn").addEventListener("click", importSeedData);
+=======
+/* Import handlers are set up in app/import.js */
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
 
 /* ── DELETE DIALOG ─────────────────────────── */
 document.getElementById("deleteCancelBtn").addEventListener("click", closeDeleteDialog);
@@ -239,6 +243,7 @@ async function saveVehicle() {
   }
 }
 
+<<<<<<< HEAD
 /* ── SEED DATA IMPORT ──────────────────────── */
 async function importSeedData() {
   var seedBtn = document.getElementById("seedBtn");
@@ -266,3 +271,6 @@ async function importSeedData() {
     seedBtn.innerHTML = '<span class="material-symbols-outlined">download</span> IMPORTAR INVENTARIO REAL';
   }
 }
+=======
+
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)

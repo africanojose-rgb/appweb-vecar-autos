@@ -11,11 +11,23 @@ function formatCOP(n) {
 
 function getDaysRemaining(dateStr) {
   if (!dateStr || dateStr.trim() === "") return null;
+<<<<<<< HEAD
   var parts = dateStr.split("/").map(Number);
   if (parts.length !== 3 || parts.some(isNaN)) return null;
   var d = parts[0], m = parts[1], y = parts[2];
   var diff = new Date(y, m - 1, d) - new Date();
   return Math.ceil(diff / 86400000);
+=======
+  if (dateStr.toUpperCase() === "ESTRENAR" || dateStr.toUpperCase() === "NO APLICA") return null;
+  var parts = dateStr.split("/").map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  var d = parts[0], m = parts[1], y = parts[2];
+  var target = new Date(y, m - 1, d);
+  var now = new Date();
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var diff = target - today;
+  return Math.round(diff / 86400000);
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
 }
 
 function alertBadge(days) {
@@ -37,9 +49,18 @@ var estadoEmoji = {
   VENDIDO: "\u{1F3C6}"
 };
 
+<<<<<<< HEAD
 function estadoBadgeHTML(estado) {
   var emoji = estadoEmoji[estado] || "";
   return '<span class="text-[9px] font-bold">' + emoji + " " + estado + "</span>";
+=======
+var ESTADOS_VALIDOS = ["DISPONIBLE", "VIRTUAL", "SEPARADO", "ALISTAMIENTO", "VENDIDO"];
+
+function estadoBadgeHTML(estado) {
+  var safe = ESTADOS_VALIDOS.indexOf(estado) !== -1 ? estado : "DISPONIBLE";
+  var emoji = estadoEmoji[safe] || "";
+  return '<span class="text-[9px] font-bold">' + sanitizeHTML(emoji + " " + safe) + "</span>";
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
 }
 
 function sanitizeHTML(str) {
@@ -49,10 +70,31 @@ function sanitizeHTML(str) {
   return div.innerHTML;
 }
 
+<<<<<<< HEAD
+=======
+function sanitizeUrl(url) {
+  if (typeof url !== "string") return "";
+  var trimmed = url.trim();
+  var lower = trimmed.toLowerCase();
+  if (lower.indexOf("javascript:") === 0) return "";
+  if (lower.indexOf("vbscript:") === 0) return "";
+  if (lower.indexOf("data:") === 0 && lower.indexOf("data:image/") !== 0) return "";
+  return trimmed;
+}
+
+function isValidImageUrl(url) {
+  if (typeof url !== "string") return false;
+  if (url.indexOf("data:image/") === 0) return true;
+  if (url.indexOf("https://") === 0 || url.indexOf("http://") === 0) return true;
+  return false;
+}
+
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
 function buildVehicleName(marca, linea, version) {
   return [marca, linea, version].filter(Boolean).join(" ").toUpperCase();
 }
 
+<<<<<<< HEAD
 function parseVehicleNameFromOldFormat(vehiculo) {
   var knownBrands = [
     "APRILIA", "AUDI", "BAJAJ", "BMW", "CHEVROLET", "FORD",
@@ -98,6 +140,9 @@ function mapOldToNewSchema(old) {
     rtmVence: old.rtm || ""
   };
 }
+=======
+
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
 
 function getEstadoOptions() {
   return [
@@ -117,12 +162,30 @@ function showAlert(message, type) {
     : type === "success"
     ? "bg-green-500/15 border-green-500/35 text-green-400"
     : "bg-amber-500/15 border-amber-500/35 text-amber-400";
+<<<<<<< HEAD
   container.innerHTML =
     '<div class="' + bg + ' border rounded-xl p-4 flex items-start gap-3 text-body-sm animate-in fade-in duration-300">' +
     '<span class="material-symbols-outlined flex-shrink-0 mt-0.5">' + (type === "error" ? "error" : type === "success" ? "check_circle" : "warning") + '</span>' +
     '<div class="flex-grow text-xs">' + sanitizeHTML(message) + '</div>' +
     '<button class="flex-shrink-0 text-on-secondary-container hover:text-white" onclick="this.parentElement.remove()">' +
     '<span class="material-symbols-outlined text-[18px]">close</span></button></div>';
+=======
+  var icon = type === "error" ? "error" : type === "success" ? "check_circle" : "warning";
+  var div = document.createElement("div");
+  div.className = bg + " border rounded-xl p-4 flex items-start gap-3 text-body-sm animate-in fade-in duration-300 pointer-events-auto";
+  div.innerHTML =
+    '<div class="flex items-start gap-3 w-full">' +
+    '<span class="material-symbols-outlined flex-shrink-0 mt-0.5">' + icon + '</span>' +
+    '<div class="flex-grow text-xs">' + sanitizeHTML(message) + '</div>' +
+    '<button class="close-alert flex-shrink-0 text-on-secondary-container hover:text-white">' +
+    '<span class="material-symbols-outlined text-[18px]">close</span></button></div>';
+  var closeBtn = div.querySelector(".close-alert");
+  if (closeBtn) closeBtn.addEventListener("click", function () { div.remove(); });
+  container.appendChild(div);
+  setTimeout(function () {
+    if (div.parentElement) div.remove();
+  }, 5000);
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
 }
 
 function validatePhotoFile(file) {

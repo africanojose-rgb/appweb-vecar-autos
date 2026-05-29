@@ -112,7 +112,11 @@ function renderInventory(items) {
 
 function renderCardContent(item, fullName, safePlaca, dotsHtml, fotoCount, soatDays, rtmDays) {
   var fotos = item.fotos || [];
+<<<<<<< HEAD
   var fotoSrc = fotos[0] ? sanitizeHTML(fotos[0]) :
+=======
+  var fotoSrc = fotos[0] && isValidImageUrl(fotos[0]) ? sanitizeUrl(fotos[0]) :
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
     "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80";
   var flags = "";
   if (item.reporte) flags += '<span class="text-[9px] bg-red-500/15 text-red-400 px-2 py-0.5 rounded-full font-bold">\u26A0 REPORTE</span>';
@@ -120,11 +124,19 @@ function renderCardContent(item, fullName, safePlaca, dotsHtml, fotoCount, soatD
 
   return '<div class="flex">' +
     '<div class="w-[38%] relative h-40 cursor-pointer group" data-action="cycle-photo">' +
+<<<<<<< HEAD
       '<img id="img_' + safePlaca + '" data-active-idx="0" class="w-full h-full object-cover transition-opacity duration-300" src="' + fotoSrc + '" alt="' + sanitizeHTML(fullName) + '" loading="lazy">' +
       '<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>' +
       '<span id="photoCount_' + safePlaca + '" class="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-[9px] text-white px-1.5 py-0.5 rounded-full font-bold">1/' + fotoCount + '</span>' +
       '<div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">' + dotsHtml + '</div>' +
       '<span class="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-[9px] text-white px-1.5 py-0.5 rounded font-mono tracking-wider">' + safePlaca + '</span>' +
+=======
+      '<img id="img_' + safePlaca + '" data-active-idx="0" class="w-full h-full object-cover transition-opacity duration-300" src="' + sanitizeHTML(sanitizeUrl(fotoSrc)) + '" alt="' + sanitizeHTML(fullName) + '" loading="lazy">' +
+      '<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>' +
+      '<span id="photoCount_' + safePlaca + '" class="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-[9px] text-white px-1.5 py-0.5 rounded-full font-bold">1/' + fotoCount + '</span>' +
+      '<div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">' + dotsHtml + '</div>' +
+      '<span class="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-[9px] text-white px-1.5 py-0.5 rounded font-mono tracking-wider">' + sanitizeHTML(safePlaca) + '</span>' +
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
     '</div>' +
     '<div class="w-[62%] p-3 flex flex-col justify-between">' +
       '<div>' +
@@ -132,7 +144,11 @@ function renderCardContent(item, fullName, safePlaca, dotsHtml, fotoCount, soatD
           '<h3 class="font-bold text-on-surface text-[13px] leading-tight font-sora pr-1">' + sanitizeHTML(fullName) + '</h3>' +
           estadoBadgeHTML(item.estado) +
         '</div>' +
+<<<<<<< HEAD
         '<p class="text-[11px] text-on-secondary-container">' + item.anio + ' \u00B7 ' + sanitizeHTML(item.color) + ' \u00B7 ' + (item.kilometraje || 0).toLocaleString() + ' km \u00B7 ' + item.transmision + '</p>' +
+=======
+        '<p class="text-[11px] text-on-secondary-container">' + sanitizeHTML(String(item.anio)) + ' \u00B7 ' + sanitizeHTML(item.color) + ' \u00B7 ' + (item.kilometraje || 0).toLocaleString() + ' km \u00B7 ' + sanitizeHTML(item.transmision) + '</p>' +
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
       '</div>' +
       '<div class="flex gap-2 items-center text-[9px] text-on-secondary-container mt-1.5 pt-1.5 border-t border-outline-variant/15">' +
         '<span>SOAT: ' + sanitizeHTML(item.soatVence || "\u2014") + ' ' + alertBadge(soatDays) + '</span>' +
@@ -144,7 +160,11 @@ function renderCardContent(item, fullName, safePlaca, dotsHtml, fotoCount, soatD
           '<button class="p-1.5 rounded-lg bg-surface-container-high/60 hover:bg-electric-blue/20 text-on-secondary-container hover:text-electric-blue transition-colors" data-action="edit" data-id="' + sanitizeHTML(item.id) + '" title="Editar">' +
             '<span class="material-symbols-outlined text-[16px]">edit</span>' +
           '</button>' +
+<<<<<<< HEAD
           '<button class="p-1.5 rounded-lg bg-surface-container-high/60 hover:bg-red-500/20 text-on-secondary-container hover:text-red-400 transition-colors" data-action="delete" data-id="' + sanitizeHTML(item.id) + '" data-placa="' + safePlaca + '" title="Eliminar">' +
+=======
+          '<button class="p-1.5 rounded-lg bg-surface-container-high/60 hover:bg-red-500/20 text-on-secondary-container hover:text-red-400 transition-colors" data-action="delete" data-id="' + sanitizeHTML(item.id) + '" data-placa="' + sanitizeHTML(safePlaca) + '" title="Eliminar">' +
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
             '<span class="material-symbols-outlined text-[16px]">delete</span>' +
           '</button>' +
         '</div>' +
@@ -182,7 +202,12 @@ function cycleCardPhoto(placa, vehicles) {
       if (!img) return;
       var idx = (parseInt(img.dataset.activeIdx || 0, 10) + 1) % car.fotos.length;
       img.dataset.activeIdx = idx;
+<<<<<<< HEAD
       img.src = car.fotos[idx];
+=======
+      var nextSrc = car.fotos[idx];
+      img.src = isValidImageUrl(nextSrc) ? nextSrc : img.src;
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
       var countEl = document.getElementById("photoCount_" + placa);
       if (countEl) countEl.innerText = (idx + 1) + "/" + car.fotos.length;
       for (var d = 0; d < car.fotos.length; d++) {
@@ -374,8 +399,14 @@ function renderPhotoPreviews() {
     var item = photoItems[pi];
     var thumb = document.createElement("div");
     thumb.className = "w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden relative group";
+<<<<<<< HEAD
     thumb.innerHTML =
       '<img src="' + item.src + '" class="w-full h-full object-cover" alt="Foto ' + (pi + 1) + '">' +
+=======
+    var thumbSrc = isValidImageUrl(item.src) ? item.src : "";
+    thumb.innerHTML =
+      '<img src="' + sanitizeUrl(thumbSrc) + '" class="w-full h-full object-cover" alt="Foto ' + (pi + 1) + '">' +
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
       '<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
         '<button class="bg-red-500/80 rounded-full p-1 photo-remove-btn" data-idx="' + pi + '">' +
           '<span class="material-symbols-outlined text-white text-[18px]">close</span>' +
@@ -460,7 +491,11 @@ function validateForm(data) {
   if (!data.placa) errors.push("La placa es obligatoria.");
   if (!data.anio || data.anio < 1900 || data.anio > 2100) errors.push("Ingresa un a\u00F1o v\u00E1lido.");
   if (!data.precioVenta || data.precioVenta <= 0) errors.push("El precio de venta debe ser mayor a 0.");
+<<<<<<< HEAD
   if (!data.kilometraje || data.kilometraje < 0) errors.push("El kilometraje no es v\u00E1lido.");
+=======
+  if (data.kilometraje < 0) errors.push("El kilometraje no es v\u00E1lido.");
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
   if (!data.color) errors.push("El color es obligatorio.");
   return errors;
 }
@@ -487,6 +522,7 @@ function getDeleteTarget() {
   return { id: dialog.dataset.targetId, placa: dialog.dataset.targetPlaca };
 }
 
+<<<<<<< HEAD
 /* ── SEED DATA ─────────────────────────────── */
 function buildSeedVehicles() {
   return [
@@ -506,3 +542,6 @@ function buildSeedVehicles() {
     { vehiculo: "VOLVO XC40", placa: "KZR392", modelo: 2022, color: "Azul", cc: "2.0", tr: "AT", matricula: "Sabaneta", km: 1100, soat: "ESTRENAR", rtm: "NO APLICA", precio: 152900000, reporte: "NO", prenda: "NO", ubicacion: "129", estado: "DISPONIBLE", especificaciones: "Volvo XC40 Mild Hybrid. Kilometraje extremadamente bajo.", fotos: ["https://images.unsplash.com/photo-1494976388531-d1058494dbb8?auto=format&fit=crop&w=400&q=80", "https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=400&q=80", "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80"] }
   ];
 }
+=======
+
+>>>>>>> f1f0a6b (actualizacion con descarga y backup)
