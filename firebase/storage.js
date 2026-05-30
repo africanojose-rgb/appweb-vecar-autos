@@ -7,20 +7,6 @@ async function compressImage(file) {
     reader.onload = function (e) {
       var img = new Image();
       img.onload = function () {
-<<<<<<< HEAD
-        var canvas = document.createElement("canvas");
-        var w = img.width;
-        var h = img.height;
-        if (w > IMG_MAX_WIDTH) {
-          h = Math.round(h * IMG_MAX_WIDTH / w);
-          w = IMG_MAX_WIDTH;
-        }
-        canvas.width = w;
-        canvas.height = h;
-        var ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", IMG_QUALITY));
-=======
         try {
           var canvas = document.createElement("canvas");
           var w = img.width;
@@ -37,7 +23,6 @@ async function compressImage(file) {
         } catch (err) {
           reject(err);
         }
->>>>>>> f1f0a6b (actualizacion con descarga y backup)
       };
       img.onerror = reject;
       img.src = e.target.result;

@@ -118,11 +118,7 @@ document.getElementById("configBtn").addEventListener("click", function () {
 document.getElementById("configCloseBtn").addEventListener("click", function () {
   closeModal("configModal");
 });
-<<<<<<< HEAD
-document.getElementById("seedBtn").addEventListener("click", importSeedData);
-=======
 /* Import handlers are set up in app/import.js */
->>>>>>> f1f0a6b (actualizacion con descarga y backup)
 
 /* ── DELETE DIALOG ─────────────────────────── */
 document.getElementById("deleteCancelBtn").addEventListener("click", closeDeleteDialog);
@@ -243,34 +239,4 @@ async function saveVehicle() {
   }
 }
 
-<<<<<<< HEAD
-/* ── SEED DATA IMPORT ──────────────────────── */
-async function importSeedData() {
-  var seedBtn = document.getElementById("seedBtn");
-  seedBtn.disabled = true;
-  seedBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Importando...';
 
-  try {
-    var raw = buildSeedVehicles();
-    var count = 0;
-    for (var si = 0; si < raw.length; si++) {
-      var data = mapOldToNewSchema(raw[si]);
-      try {
-        await addVehicle(data);
-        count++;
-      } catch (e) {
-        console.warn("Error importing", raw[si].placa, e);
-      }
-    }
-    closeModal("configModal");
-    showAlert("\u2705 " + count + " veh\u00EDculos importados exitosamente a Firestore.", "success");
-  } catch (err) {
-    showAlert("Error al importar: " + (err.message || "desconocido"), "error");
-  } finally {
-    seedBtn.disabled = false;
-    seedBtn.innerHTML = '<span class="material-symbols-outlined">download</span> IMPORTAR INVENTARIO REAL';
-  }
-}
-=======
-
->>>>>>> f1f0a6b (actualizacion con descarga y backup)
