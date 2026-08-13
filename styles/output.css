@@ -749,6 +749,70 @@ input:where([type='file']):focus {
   outline: 1px auto -webkit-focus-ring-color;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+       text-size-adjust: 100%;
+}
+
+::-webkit-inner-spin-button {
+  height: auto;
+}
+
+::-webkit-outer-spin-button {
+  height: auto;
+}
+
+::-webkit-datetime-edit {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+::-webkit-datetime-edit-year-field {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+::-webkit-datetime-edit-month-field {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+::-webkit-datetime-edit-day-field {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+::-webkit-datetime-edit-hour-field {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+::-webkit-datetime-edit-minute-field {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+::-webkit-datetime-edit-second-field {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+::-webkit-datetime-edit-millisecond-field {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+::-webkit-datetime-edit-meridiem-field {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+input::-moz-placeholder,
+  textarea::-moz-placeholder {
+  opacity: 1;
+}
+
 .\!container {
   width: 100% !important;
 }
@@ -2014,6 +2078,14 @@ input:where([type='file']):focus {
 .duration-500 {
   transition-duration: 500ms;
 }
+
+/*
+  Compatibilidad entre navegadores:
+  - Añade la propiedad estándar text-size-adjust junto al prefijo -webkit-.
+  - Divide selectores agrupados con pseudoelementos de vendor en reglas
+    individuales para que el navegador no descarte el bloque completo
+    si no soporta alguno de los selectores.
+*/
 
 .placeholder\:text-on-tertiary\/30::-moz-placeholder {
   color: rgb(49 48 48 / 0.3);

@@ -69,6 +69,7 @@ export function sanitizeUrl(url) {
 export function isValidImageUrl(url) {
   if (typeof url !== "string") return false;
   if (url.indexOf("data:image/") === 0) return true;
+  if (url.indexOf("blob:") === 0) return true;
   if (url.indexOf("https://") === 0 || url.indexOf("http://") === 0) return true;
   return false;
 }

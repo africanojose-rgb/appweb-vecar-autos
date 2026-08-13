@@ -331,9 +331,19 @@ export function closeModal(modalId) {
 
 /* ── PHOTO MANAGEMENT IN FORM ──────────────── */
 export function resetPhotoState() {
+  revokeNewPhotoUrls();
   photoItems = [];
   removedExistingUrls = [];
   renderPhotoPreviews();
+}
+
+function revokeNewPhotoUrls() {
+  for (var ri = 0; ri < photoItems.length; ri++) {
+    var item = photoItems[ri];
+    if (!item.isExisting && item.src && item.src.indexOf('blob:') === 0) {
+      URL.revokeObjectURL(item.src);
+    }
+  }
 }
 
 export function setPhotoItems(items) {
@@ -363,15 +373,9 @@ export function handleFileSelect(e) {
     if (photoItems.length >= 10) break;
     var err = validatePhotoFile(file);
     if (err) { showAlert(err, "error"); continue; }
-    var reader = new FileReader();
-    reader.onload = (function (f) {
-      return function (ev) {
-        photoItems.push({ src: ev.target.result, file: f, isExisting: false });
-        renderPhotoPreviews();
-      };
-    })(file);
-    reader.readAsDataURL(file);
+    photoItems.push({ src: URL.createObjectURL(file), file: file, isExisting: false });
   }
+  renderPhotoPreviews();
   e.target.value = "";
 }
 
@@ -379,6 +383,7 @@ function removePhoto(index) {
   var item = photoItems[index];
   if (!item) return;
   if (item.isExisting) removedExistingUrls.push(item.src);
+  else if (item.src && item.src.indexOf('blob:') === 0) URL.revokeObjectURL(item.src);
   photoItems.splice(index, 1);
   renderPhotoPreviews();
 }

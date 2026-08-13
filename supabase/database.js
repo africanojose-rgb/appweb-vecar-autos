@@ -132,9 +132,16 @@ export async function deleteVehicle(id) {
   var result = await supabaseClient
     .from(VEHICLES_TABLE)
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .select('id');
 
   if (result.error) throw result.error;
+
+  if (!result.data || result.data.length === 0) {
+    throw new Error('No se pudo eliminar el vehiculo: la fila no fue encontrada o las politicas RLS lo impiden.');
+  }
+
+  fetchVehicles();
 }
 
 export function getDatabaseErrorMessage(error) {

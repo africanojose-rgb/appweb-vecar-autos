@@ -4,7 +4,7 @@ var STORAGE_BUCKET = 'vehiculos';
 var IMG_MAX_WIDTH = 800;
 var IMG_QUALITY = 0.7;
 
-export async function compressImage(file) {
+export function compressImageToBlob(file) {
   return new Promise(function (resolve, reject) {
     var reader = new FileReader();
     reader.onload = function (e) {
@@ -22,7 +22,10 @@ export async function compressImage(file) {
           canvas.height = h;
           var ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/jpeg', IMG_QUALITY));
+          canvas.toBlob(function (blob) {
+            if (blob) resolve(blob);
+            else reject(new Error('No se pudo comprimir la imagen.'));
+          }, 'image/jpeg', IMG_QUALITY);
         } catch (err) {
           reject(err);
         }
@@ -35,21 +38,8 @@ export async function compressImage(file) {
   });
 }
 
-export function dataURLToBlob(dataURL) {
-  var parts = dataURL.split(',');
-  var mime = parts[0].match(/:(.*?);/)[1];
-  var bytes = atob(parts[1]);
-  var ab = new ArrayBuffer(bytes.length);
-  var ia = new Uint8Array(ab);
-  for (var i = 0; i < bytes.length; i++) {
-    ia[i] = bytes.charCodeAt(i);
-  }
-  return new Blob([ab], { type: mime });
-}
-
 export async function uploadPhoto(file, vehicleId, index) {
-  var dataUrl = await compressImage(file);
-  var blob = dataURLToBlob(dataUrl);
+  var blob = await compressImageToBlob(file);
   var filePath = vehicleId + '/' + index + '.jpg';
 
   var result = await supabaseClient.storage
@@ -84,6 +74,7 @@ export function getPhotoUrl(path) {
   if (!path) return '';
   if (path.indexOf('http') === 0) return path;
   if (path.indexOf('data:') === 0) return path;
+  if (path.indexOf('blob:') === 0) return path;
   var result = supabaseClient.storage
     .from(STORAGE_BUCKET)
     .getPublicUrl(path);

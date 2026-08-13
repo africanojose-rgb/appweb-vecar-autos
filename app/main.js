@@ -198,7 +198,6 @@ document.getElementById("confirmDeleteBtn").addEventListener("click", async func
     showAlert("Vehiculo " + target.placa + " eliminado.", "success");
   } catch (err) {
     showAlert(getDatabaseErrorMessage(err), "error");
-    closeDeleteDialog();
   }
 });
 

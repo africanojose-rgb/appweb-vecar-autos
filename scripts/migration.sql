@@ -1,5 +1,5 @@
 -- ============================================================
--- Migración: Firebase Firestore → Supabase PostgreSQL
+-- Esquema inicial: Supabase PostgreSQL
 -- Proyecto: Vecar Autos - Panel de Control
 -- Ejecutar esto en: Supabase Dashboard > SQL Editor
 -- ============================================================

@@ -41,9 +41,9 @@
 
     RF-04  FOTOGRAFÍAS
            - Subir múltiples fotografías desde el dispositivo.
-           - Previsualización antes de guardar.
+           - Previsualización antes de guardar (object URLs).
            - Compresión automática (800px máximo, calidad 70%).
-           - Almacenamiento en base64 dentro de Firestore.
+           - Almacenamiento en Supabase Storage; en la BD solo se guarda la ruta.
            - Ciclado de fotos en la tarjeta (click para ver siguiente).
            - Eliminación individual de fotos.
            - Validación de tipo (JPG, PNG, WebP, AVIF) y tamaño (< 5MB).
@@ -65,54 +65,53 @@
            - Badge de contador en el botón de notificaciones.
 
     RF-07  IMPORTACIÓN DE DATOS
-           - Importar inventario desde datos semilla precargados.
-           - Conversión automática del esquema antiguo al nuevo.
+           - Importar inventario desde Excel (.xlsx) o SQL (INSERT INTO vehiculos).
+           - Exportación de backup en Excel.
 
     RF-08  PERSISTENCIA
-           - Los datos se almacenan en Firestore (Firebase).
-           - Sincronización en tiempo real (onSnapshot).
-           - Las fotografías se almacenan como base64 en Firestore.
+           - Los datos se almacenan en Supabase (PostgreSQL).
+           - Sincronización en tiempo real (Supabase Realtime).
+           - Las fotografías se almacenan en Supabase Storage; la BD guarda la ruta.
 
 3.  REQUERIMIENTOS NO FUNCIONALES
     ----------------------------------------------------------------------------
 
     RNF-01  ARQUITECTURA
-            - Aplicación 100% frontend (HTML + CSS + JavaScript).
-            - Sin servidor propio. Se abre con doble-click (file://).
-            - Backend como servicio: Firebase (Auth + Firestore).
+            - Aplicación 100% frontend (HTML + CSS + JavaScript, ES modules).
+            - Sin servidor propio. Requiere servir por HTTP (no file://).
+            - Backend como servicio: Supabase (Auth + PostgreSQL + Storage).
 
     RNF-02  SEGURIDAD
             - Autenticación obligatoria para cualquier operación.
-            - Reglas de Firestore: solo usuarios autenticados pueden leer/escribir.
+            - Políticas RLS en Supabase: solo usuarios autenticados pueden leer/escribir.
             - No se almacenan claves ni secretos en el cliente.
-            - Las contraseñas se manejan exclusivamente en Firebase Auth.
+            - Las contraseñas se manejan exclusivamente en Supabase Auth.
 
     RNF-03  RENDIMIENTO
-            - Carga inicial del listado vía onSnapshot (tiempo real).
-            - Compresión de imágenes antes de almacenar (800px / 70%).
-            - Límite de 10 fotos por vehículo para evitar documentos > 1MB.
+            - Carga inicial del listado vía Supabase Realtime.
+            - Compresión de imágenes antes de subir (800px / 70%).
+            - Límite de 10 fotos por vehículo.
             - Lazy loading en imágenes de tarjetas.
 
     RNF-04  COMPATIBILIDAD
             - Funciona en navegadores modernos (Chrome, Firefox, Edge, Safari).
             - Diseño responsive (mobile-first).
             - Modo oscuro (clase "dark" en el HTML).
-            - Sin dependencias de servidor local (file://).
 
     RNF-05  MANTENIBILIDAD
-            - Código separado en módulos: firebase/, app/, styles/.
+            - Código separado en módulos: supabase/, app/, styles/.
             - CSS con Tailwind CSS (vía CLI) + estilos personalizados.
             - Comentarios de sección en cada archivo.
-            - Variables globales para configuración (Firebase, límites de imagen).
+            - Variables globales para configuración (Supabase, límites de imagen).
 
 4.  RESTRICCIONES TÉCNICAS
     ----------------------------------------------------------------------------
 
-    RT-01  Plan gratuito de Firebase (Spark). No incluye Firebase Storage.
-    RT-02  Las imágenes se almacenan como base64 en Firestore.
-    RT-03  Máximo 1MB por documento en Firestore (~5-8 fotos comprimidas).
+    RT-01  Supabase (plan gratuito). Storage con bucket público "vehiculos".
+    RT-02  Las imágenes se almacenan en Supabase Storage; la BD guarda la ruta.
+    RT-03  Esquema en PostgreSQL definido en scripts/migration.sql.
     RT-04  No se requiere instalación de dependencias para el usuario final.
-    RT-05  El proyecto se sirve desde file:// sin servidor HTTP.
+    RT-05  El proyecto requiere servidor HTTP para los ES modules.
 
 5.  STACK TECNOLÓGICO
     ----------------------------------------------------------------------------
@@ -121,12 +120,13 @@
       - HTML5
       - Tailwind CSS 3.x (generado vía CLI)
       - CSS3 personalizado (glassmorphism, animaciones)
-      - JavaScript (ES5+ compat, sin bundler)
+      - JavaScript (ES modules, sin bundler)
 
-    Backend (Firebase)
-      - Firebase Auth (email/password)
-      - Firestore (base de datos en tiempo real)
-      - Firebase SDK compat v10.14.1 (CDN)
+    Backend (Supabase)
+      - Supabase Auth (email/password)
+      - PostgreSQL (base de datos con Realtime)
+      - Supabase Storage (fotos)
+      - Supabase JS SDK v2 (bundle local supabase/supabase.umd.js)
 
     Fuentes
       - Hanken Grotesk (UI)
@@ -136,21 +136,24 @@
 6.  ESTRUCTURA DEL PROYECTO
     ----------------------------------------------------------------------------
 
-    index.html                  ← Entry point (doble-click)
+    index.html                  ← Entry point (módulo ES único)
     package.json                ← Tailwind CLI build
     tailwind.config.js          ← Tema personalizado Tailwind
+    env.js                      ← Configuración Supabase (URL + anon key)
     styles/
-      input.css                 ← Directivas @tailwind
+      input.css                 ← Directivas @tailwind + compatibilidad
       output.css                ← Generado por Tailwind CLI
       main.css                  ← Estilos personalizados
-    firebase/
-      config.js                 ← Inicialización Firebase
+    supabase/
+      config.js                 ← Inicialización cliente Supabase
       auth.js                   ← Funciones de autenticación
-      firestore.js              ← CRUD de vehículos
-      storage.js                ← Compresión de imágenes
+      database.js               ← CRUD de vehículos + realtime
+      storage.js                ← Compresión y subida de imágenes
+      supabase.umd.js           ← Bundle local del SDK Supabase
     app/
       utils.js                  ← Formateo, validación, sanitización
       ui.js                     ← Renderizado, modales, filtros
       main.js                   ← Orquestador, eventos, flujo
+      import.js                 ← Import/export Excel y SQL
     logo_empresa/
       logo.jpg                  ← Logotipo de la empresa
