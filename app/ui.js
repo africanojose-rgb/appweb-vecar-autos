@@ -1,9 +1,23 @@
+import {
+  getDaysRemaining,
+  buildVehicleName,
+  sanitizeHTML,
+  sanitizeUrl,
+  isValidImageUrl,
+  formatCOP,
+  validatePhotoFile,
+  showAlert,
+  estadoBadgeHTML,
+  alertBadge
+} from './utils.js';
+import { getPhotoUrl } from '../supabase/storage.js';
+
 /* ── PHOTO STATE ──────────────────────────── */
-var photoItems = [];
-var removedExistingUrls = [];
+export let photoItems = [];
+export let removedExistingUrls = [];
 
 /* ── VIEW TOGGLES ──────────────────────────── */
-function showLogin() {
+export function showLogin() {
   document.getElementById("loginView").classList.remove("hidden");
   var dash = document.getElementById("mainDashboardView");
   dash.classList.add("hidden");
@@ -11,7 +25,7 @@ function showLogin() {
   dash.classList.add("opacity-0");
 }
 
-function showDashboard() {
+export function showDashboard() {
   document.getElementById("loginView").classList.add("hidden");
   var dash = document.getElementById("mainDashboardView");
   dash.classList.remove("hidden");
@@ -22,7 +36,7 @@ function showDashboard() {
 }
 
 /* ── ALERTS BANNER ─────────────────────────── */
-function checkGlobalAlerts(vehicles) {
+export function checkGlobalAlerts(vehicles) {
   var expired = 0;
   var expiring = 0;
   for (var vi = 0; vi < vehicles.length; vi++) {
@@ -66,7 +80,7 @@ function makeSpan(text, cls) {
 }
 
 /* ── METRICS ───────────────────────────────── */
-function updateMetrics(vehicles) {
+export function updateMetrics(vehicles) {
   document.getElementById("metricActive").textContent = vehicles.filter(
     function (i) { return ["VENDIDO", "ALISTAMIENTO"].indexOf(i.estado) === -1; }
   ).length;
@@ -80,7 +94,7 @@ function updateMetrics(vehicles) {
 }
 
 /* ── INVENTORY RENDER ──────────────────────── */
-function renderInventory(items) {
+export function renderInventory(items) {
   var container = document.getElementById("inventoryContainer");
   var emptyState = document.getElementById("emptyState");
   container.innerHTML = "";
@@ -112,7 +126,8 @@ function renderInventory(items) {
 
 function renderCardContent(item, fullName, safePlaca, dotsHtml, fotoCount, soatDays, rtmDays) {
   var fotos = item.fotos || [];
-  var fotoSrc = fotos[0] && isValidImageUrl(fotos[0]) ? sanitizeUrl(fotos[0]) :
+  var firstFoto = fotos[0] ? getPhotoUrl(fotos[0]) : '';
+  var fotoSrc = firstFoto && isValidImageUrl(firstFoto) ? sanitizeUrl(firstFoto) :
     "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80";
   var flags = "";
   if (item.reporte) flags += '<span class="text-[9px] bg-red-500/15 text-red-400 px-2 py-0.5 rounded-full font-bold">\u26A0 REPORTE</span>';
@@ -155,7 +170,7 @@ function renderCardContent(item, fullName, safePlaca, dotsHtml, fotoCount, soatD
 }
 
 /* ── CARD EVENT DELEGATION ─────────────────── */
-function setupCardDelegation(handlers) {
+export function setupCardDelegation(handlers) {
   var container = document.getElementById("inventoryContainer");
   container.addEventListener("click", function (e) {
     var target = e.target.closest("[data-action]");
@@ -173,7 +188,7 @@ function setupCardDelegation(handlers) {
 }
 
 /* ── PHOTO CYCLING ─────────────────────────── */
-function cycleCardPhoto(placa, vehicles) {
+export function cycleCardPhoto(placa, vehicles) {
   for (var ci = 0; ci < vehicles.length; ci++) {
     if (vehicles[ci].placa === placa) {
       var car = vehicles[ci];
@@ -182,7 +197,7 @@ function cycleCardPhoto(placa, vehicles) {
       if (!img) return;
       var idx = (parseInt(img.dataset.activeIdx || 0, 10) + 1) % car.fotos.length;
       img.dataset.activeIdx = idx;
-      var nextSrc = car.fotos[idx];
+      var nextSrc = getPhotoUrl(car.fotos[idx]);
       img.src = isValidImageUrl(nextSrc) ? nextSrc : img.src;
       var countEl = document.getElementById("photoCount_" + placa);
       if (countEl) countEl.innerText = (idx + 1) + "/" + car.fotos.length;
@@ -198,7 +213,7 @@ function cycleCardPhoto(placa, vehicles) {
 }
 
 /* ── NOTIFICATIONS ─────────────────────────── */
-function showNotifications(vehicles) {
+export function showNotifications(vehicles) {
   var list = [];
   for (var ni = 0; ni < vehicles.length; ni++) {
     var i = vehicles[ni];
@@ -219,7 +234,7 @@ function showNotifications(vehicles) {
 }
 
 /* ── FILTERS ───────────────────────────────── */
-function applyFilters(vehicles, activeFilterTab) {
+export function applyFilters(vehicles, activeFilterTab) {
   var search = (document.getElementById("searchInput").value || "").toLowerCase();
   var trFilter = document.getElementById("filterTr").value;
   var stFilter = document.getElementById("filterEstado").value;
@@ -259,26 +274,26 @@ function applyFilters(vehicles, activeFilterTab) {
   document.getElementById("resultCount").textContent = "(" + items.length + " de " + vehicles.length + ")";
 }
 
-function toggleFilterDrawer() {
+export function toggleFilterDrawer() {
   var el = document.getElementById("filterDrawer");
   if (el.classList.contains("hidden")) el.classList.remove("hidden");
   else el.classList.add("hidden");
 }
 
-function clearFilters() {
+export function clearFilters() {
   document.getElementById("filterTr").value = "";
   document.getElementById("filterEstado").value = "";
   document.getElementById("filterAlerts").value = "";
   document.getElementById("searchInput").value = "";
 }
 
-function filterExpiringOnly() {
+export function filterExpiringOnly() {
   document.getElementById("filterAlerts").value = "any";
   document.getElementById("filterDrawer").classList.remove("hidden");
 }
 
 /* ── TAB SWITCHING ─────────────────────────── */
-function switchDashboardTab(tab) {
+export function switchDashboardTab(tab) {
   var buttons = document.querySelectorAll("nav.fixed.bottom-0 button");
   var tabMap = { all: 0, available: 1, sold: 3 };
   var idx = tabMap[tab] !== undefined ? tabMap[tab] : -1;
@@ -300,14 +315,14 @@ function switchDashboardTab(tab) {
 }
 
 /* ── MODAL HELPERS ─────────────────────────── */
-function openModal(modalId) {
+export function openModal(modalId) {
   var el = document.getElementById(modalId);
   if (!el) return;
   el.classList.remove("hidden");
   document.body.style.overflow = "hidden";
 }
 
-function closeModal(modalId) {
+export function closeModal(modalId) {
   var el = document.getElementById(modalId);
   if (!el) return;
   el.classList.add("hidden");
@@ -315,13 +330,13 @@ function closeModal(modalId) {
 }
 
 /* ── PHOTO MANAGEMENT IN FORM ──────────────── */
-function resetPhotoState() {
+export function resetPhotoState() {
   photoItems = [];
   removedExistingUrls = [];
   renderPhotoPreviews();
 }
 
-function setPhotoItems(items) {
+export function setPhotoItems(items) {
   photoItems = [];
   for (var si = 0; si < items.length; si++) {
     if (items[si] && items[si].trim() !== "") {
@@ -332,7 +347,7 @@ function setPhotoItems(items) {
   renderPhotoPreviews();
 }
 
-function triggerFileInput() {
+export function triggerFileInput() {
   if (photoItems.length >= 10) {
     alert("M\u00E1ximo 10 fotos por veh\u00EDculo.");
     return;
@@ -340,7 +355,7 @@ function triggerFileInput() {
   document.getElementById("vehicleFileInput").click();
 }
 
-function handleFileSelect(e) {
+export function handleFileSelect(e) {
   var files = Array.from(e.target.files);
   if (!files.length) return;
   for (var fi = 0; fi < files.length; fi++) {
@@ -375,7 +390,8 @@ function renderPhotoPreviews() {
     var item = photoItems[pi];
     var thumb = document.createElement("div");
     thumb.className = "w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden relative group";
-    var thumbSrc = isValidImageUrl(item.src) ? item.src : "";
+    var resolvedSrc = getPhotoUrl(item.src);
+    var thumbSrc = isValidImageUrl(resolvedSrc) ? resolvedSrc : "";
     thumb.innerHTML =
       '<img src="' + sanitizeUrl(thumbSrc) + '" class="w-full h-full object-cover" alt="Foto ' + (pi + 1) + '">' +
       '<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
@@ -394,7 +410,7 @@ function renderPhotoPreviews() {
 }
 
 /* ── FORM FILL HELPERS ─────────────────────── */
-function fillFormFields(vehicle) {
+export function fillFormFields(vehicle) {
   document.getElementById("editVehicleId").value = vehicle.id || "";
   document.getElementById("formMarca").value = vehicle.marca || "";
   document.getElementById("formLinea").value = vehicle.linea || "";
@@ -418,7 +434,7 @@ function fillFormFields(vehicle) {
   document.getElementById("formDescripcion").value = vehicle.descripcion || "";
 }
 
-function resetFormFields() {
+export function resetFormFields() {
   var form = document.getElementById("vehicleForm");
   form.reset();
   document.getElementById("editVehicleId").value = "";
@@ -430,7 +446,7 @@ function resetFormFields() {
   document.getElementById("formVisibleWeb").checked = true;
 }
 
-function collectFormData() {
+export function collectFormData() {
   return {
     marca: document.getElementById("formMarca").value.trim().toLowerCase(),
     linea: document.getElementById("formLinea").value.trim(),
@@ -455,7 +471,7 @@ function collectFormData() {
   };
 }
 
-function validateForm(data) {
+export function validateForm(data) {
   var errors = [];
   if (!data.marca) errors.push("La marca es obligatoria.");
   if (!data.linea) errors.push("La l\u00ednea es obligatoria.");
@@ -468,7 +484,7 @@ function validateForm(data) {
 }
 
 /* ── DELETE DIALOG ─────────────────────────── */
-function showDeleteConfirm(id, placa) {
+export function showDeleteConfirm(id, placa) {
   var dialog = document.getElementById("deleteDialog");
   dialog.classList.remove("hidden");
   dialog.classList.add("flex");
@@ -476,7 +492,7 @@ function showDeleteConfirm(id, placa) {
   dialog.dataset.targetPlaca = placa;
 }
 
-function closeDeleteDialog() {
+export function closeDeleteDialog() {
   var dialog = document.getElementById("deleteDialog");
   dialog.classList.add("hidden");
   dialog.classList.remove("flex");
@@ -484,9 +500,7 @@ function closeDeleteDialog() {
   delete dialog.dataset.targetPlaca;
 }
 
-function getDeleteTarget() {
+export function getDeleteTarget() {
   var dialog = document.getElementById("deleteDialog");
   return { id: dialog.dataset.targetId, placa: dialog.dataset.targetPlaca };
 }
-
-

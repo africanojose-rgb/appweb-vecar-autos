@@ -1,7 +1,7 @@
 var MAX_PHOTO_SIZE = 5 * 1024 * 1024;
 var ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 
-function formatCOP(n) {
+export function formatCOP(n) {
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
     currency: "COP",
@@ -9,7 +9,7 @@ function formatCOP(n) {
   }).format(n);
 }
 
-function getDaysRemaining(dateStr) {
+export function getDaysRemaining(dateStr) {
   if (!dateStr || dateStr.trim() === "") return null;
   if (dateStr.toUpperCase() === "ESTRENAR" || dateStr.toUpperCase() === "NO APLICA") return null;
   var parts = dateStr.split("/").map(Number);
@@ -22,7 +22,7 @@ function getDaysRemaining(dateStr) {
   return Math.round(diff / 86400000);
 }
 
-function alertBadge(days) {
+export function alertBadge(days) {
   if (days === null) return "";
   if (days < 0) {
     return '<span class="inline-block bg-red-500/20 text-red-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full">VENCIDO</span>';
@@ -43,20 +43,20 @@ var estadoEmoji = {
 
 var ESTADOS_VALIDOS = ["DISPONIBLE", "VIRTUAL", "SEPARADO", "ALISTAMIENTO", "VENDIDO"];
 
-function estadoBadgeHTML(estado) {
+export function estadoBadgeHTML(estado) {
   var safe = ESTADOS_VALIDOS.indexOf(estado) !== -1 ? estado : "DISPONIBLE";
   var emoji = estadoEmoji[safe] || "";
   return '<span class="text-[9px] font-bold">' + sanitizeHTML(emoji + " " + safe) + "</span>";
 }
 
-function sanitizeHTML(str) {
+export function sanitizeHTML(str) {
   if (typeof str !== "string") return str;
   var div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
 }
 
-function sanitizeUrl(url) {
+export function sanitizeUrl(url) {
   if (typeof url !== "string") return "";
   var trimmed = url.trim();
   var lower = trimmed.toLowerCase();
@@ -66,29 +66,18 @@ function sanitizeUrl(url) {
   return trimmed;
 }
 
-function isValidImageUrl(url) {
+export function isValidImageUrl(url) {
   if (typeof url !== "string") return false;
   if (url.indexOf("data:image/") === 0) return true;
   if (url.indexOf("https://") === 0 || url.indexOf("http://") === 0) return true;
   return false;
 }
-function buildVehicleName(marca, linea, version) {
+
+export function buildVehicleName(marca, linea, version) {
   return [marca, linea, version].filter(Boolean).join(" ").toUpperCase();
 }
 
-
-
-function getEstadoOptions() {
-  return [
-    { value: "DISPONIBLE", label: "DISPONIBLE" },
-    { value: "VIRTUAL", label: "VIRTUAL" },
-    { value: "SEPARADO", label: "SEPARADO" },
-    { value: "ALISTAMIENTO", label: "ALISTAMIENTO" },
-    { value: "VENDIDO", label: "VENDIDO" }
-  ];
-}
-
-function showAlert(message, type) {
+export function showAlert(message, type) {
   var container = document.getElementById("alertContainer");
   if (!container) return;
   var bg = type === "error"
@@ -113,7 +102,7 @@ function showAlert(message, type) {
   }, 5000);
 }
 
-function validatePhotoFile(file) {
+export function validatePhotoFile(file) {
   if (!file) return "No se seleccionó ningún archivo.";
   if (ALLOWED_MIME_TYPES.indexOf(file.type) === -1) {
     return "Formato no permitido. Usa JPG, PNG, WebP o AVIF.";

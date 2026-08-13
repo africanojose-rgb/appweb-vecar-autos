@@ -1,3 +1,6 @@
+import { showAlert, sanitizeHTML } from './utils.js';
+import { addVehicle, getDatabaseErrorMessage } from '../supabase/database.js';
+
 /* ── COLUMN DEFINITIONS ────────────────────── */
 var SHEET_COLUMNS = [
   { key: "marca", label: "MARCA", required: true },
@@ -163,7 +166,7 @@ function normalizeVehicle(raw) {
 
 function normalizeBool(val, defaultVal) {
   if (val === true || val === "true" || val === "SI" || val === "S" || val === 1 || val === "1") return true;
-  if (val === false || val === "false" || val === "NO" || val === "N" || val === 0 || val === "0" || val === "") return defaultVal ? false : false;
+  if (val === false || val === "false" || val === "NO" || val === "N" || val === 0 || val === "0" || val === "") return defaultVal;
   return defaultVal;
 }
 
@@ -340,12 +343,11 @@ function parseSqlValue(val) {
 }
 
 /* ── EXPORT BACKUP ──────────────────────────── */
-function downloadBackupExcel() {
+function downloadBackupExcel(vehicles) {
   if (typeof XLSX === "undefined") {
     showAlert("La librería SheetJS no está disponible.", "error");
     return;
   }
-  var vehicles = typeof inventory !== "undefined" ? inventory : [];
   if (vehicles.length === 0) {
     showAlert("No hay vehículos en el inventario para exportar.", "warning");
     return;
@@ -396,15 +398,17 @@ function downloadBackupExcel() {
   showAlert("Backup exportado: " + vehicles.length + " vehículos.", "success");
 }
 
-/* ── FIRESTORE IMPORT ──────────────────────── */
-async function importToFirestore(vehicles, onProgress) {
+/* ── SUPABASE IMPORT ───────────────────────── */
+async function importToSupabase(vehicles, onProgress) {
   var results = { success: 0, errors: [] };
   for (var ii = 0; ii < vehicles.length; ii++) {
     try {
-      await addVehicle(vehicles[ii]);
+      var v = vehicles[ii];
+      v.fotos = v.fotos || [];
+      await addVehicle(v);
       results.success++;
     } catch (err) {
-      results.errors.push({ index: ii, placa: vehicles[ii].placa, error: getFirestoreErrorMessage(err) });
+      results.errors.push({ index: ii, placa: vehicles[ii].placa, error: getDatabaseErrorMessage(err) });
     }
     if (onProgress) onProgress(ii + 1, vehicles.length);
   }
@@ -419,7 +423,7 @@ function handleImportFileSelected() {
   startImport(file);
 }
 
-function startImport(file) {
+async function startImport(file) {
   var formatRadio = document.querySelector('input[name="importFormat"]:checked');
   var format = formatRadio ? formatRadio.value : "excel";
   var dropZone = document.getElementById("importDropZone");
@@ -435,9 +439,9 @@ function startImport(file) {
   resultContainer.innerHTML = "";
   resultContainer.classList.add("hidden");
 
-  var parsePromise = format === "sql" ? parseSqlToVehicles(file) : parseExcelToVehicles(file);
+  try {
+    var parsed = format === "sql" ? await parseSqlToVehicles(file) : await parseExcelToVehicles(file);
 
-  parsePromise.then(function (parsed) {
     if (parsed.vehicles.length === 0) {
       var msg = "No se encontraron vehículos válidos.";
       if (parsed.errors.length > 0) msg += " Errores:\n" + parsed.errors.join("\n");
@@ -448,43 +452,43 @@ function startImport(file) {
 
     progressText.textContent = "Importando " + parsed.vehicles.length + " vehículos...";
 
-    importToFirestore(parsed.vehicles, function (done, total) {
+    var results = await importToSupabase(parsed.vehicles, function (done, total) {
       var pct = Math.round((done / total) * 100);
       progressBar.style.width = pct + "%";
       progressText.textContent = "Importando " + done + " de " + total + "...";
-    }).then(function (results) {
-      progressBar.style.width = "100%";
-      var html = "";
-      if (results.success > 0) {
-        html += '<div class="flex items-center gap-2 text-green-400 font-bold">' +
-          '<span class="material-symbols-outlined text-[18px]">check_circle</span>' +
-          results.success + ' vehículos importados exitosamente.</div>';
-      }
-      if (results.errors.length > 0) {
-        html += '<div class="mt-2 text-xs text-red-400 space-y-0.5">' +
-          '<span class="font-bold">' + results.errors.length + ' errores:</span>';
-        for (var ei = 0; ei < results.errors.length; ei++) {
-          html += '<div>• ' + results.errors[ei].placa + ': ' + sanitizeHTML(results.errors[ei].error) + '</div>';
-        }
-        html += '</div>';
-      }
-      if (parsed.errors.length > 0) {
-        html += '<div class="mt-2 text-xs text-amber-400 space-y-0.5">' +
-          '<span class="font-bold">' + parsed.errors.length + ' advertencias de validación:</span>';
-        for (var ei = 0; ei < parsed.errors.length; ei++) {
-          html += '<div>• ' + sanitizeHTML(parsed.errors[ei]) + '</div>';
-        }
-        html += '</div>';
-      }
-      resultContainer.innerHTML = html;
-      resultContainer.classList.remove("hidden");
-      progressText.textContent = "Importación completada.";
-      setTimeout(resetImportUI, 6000);
     });
-  }).catch(function (err) {
+
+    progressBar.style.width = "100%";
+    var html = "";
+    if (results.success > 0) {
+      html += '<div class="flex items-center gap-2 text-green-400 font-bold">' +
+        '<span class="material-symbols-outlined text-[18px]">check_circle</span>' +
+        results.success + ' vehículos importados exitosamente.</div>';
+    }
+    if (results.errors.length > 0) {
+      html += '<div class="mt-2 text-xs text-red-400 space-y-0.5">' +
+        '<span class="font-bold">' + results.errors.length + ' errores:</span>';
+      for (var ei = 0; ei < results.errors.length; ei++) {
+        html += '<div>• ' + results.errors[ei].placa + ': ' + sanitizeHTML(results.errors[ei].error) + '</div>';
+      }
+      html += '</div>';
+    }
+    if (parsed.errors.length > 0) {
+      html += '<div class="mt-2 text-xs text-amber-400 space-y-0.5">' +
+        '<span class="font-bold">' + parsed.errors.length + ' advertencias de validación:</span>';
+      for (var ei = 0; ei < parsed.errors.length; ei++) {
+        html += '<div>• ' + sanitizeHTML(parsed.errors[ei]) + '</div>';
+      }
+      html += '</div>';
+    }
+    resultContainer.innerHTML = html;
+    resultContainer.classList.remove("hidden");
+    progressText.textContent = "Importación completada.";
+    setTimeout(resetImportUI, 6000);
+  } catch (err) {
     showAlert(err.message || "Error al procesar el archivo.", "error");
     resetImportUI();
-  });
+  }
 }
 
 function resetImportUI() {
@@ -535,12 +539,16 @@ function setupImportDropZone() {
 }
 
 /* ── INIT ──────────────────────────────────── */
-document.addEventListener("DOMContentLoaded", function () {
+export function initImport(getInventory) {
   var dlBtn = document.getElementById("downloadTemplateBtn");
   if (dlBtn) dlBtn.addEventListener("click", downloadImportTemplate);
 
   var backupBtn = document.getElementById("downloadBackupBtn");
-  if (backupBtn) backupBtn.addEventListener("click", downloadBackupExcel);
+  if (backupBtn) {
+    backupBtn.addEventListener("click", function () {
+      downloadBackupExcel(getInventory());
+    });
+  }
 
   var formatRadios = document.querySelectorAll('input[name="importFormat"]');
   for (var fi = 0; fi < formatRadios.length; fi++) {
@@ -556,4 +564,4 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   setupImportDropZone();
-});
+}

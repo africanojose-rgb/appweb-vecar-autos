@@ -1,13 +1,62 @@
-/* ── STATE ─────────────────────────────────── */
-var inventory = [];
-var activeFilterTab = "all";
-var activeEditId = null;
-var unsubscribe = null;
+import {
+  login,
+  logout,
+  onAuthChange,
+  getCurrentUser,
+  getAuthErrorMessage,
+  getCurrentSession
+} from '../supabase/auth.js';
+import {
+  listenVehicles,
+  removeRealtimeChannel,
+  addVehicle,
+  updateVehicle,
+  deleteVehicle,
+  getDatabaseErrorMessage
+} from '../supabase/database.js';
+import { uploadPhoto, deletePhoto } from '../supabase/storage.js';
+import { showAlert } from './utils.js';
+import {
+  showLogin,
+  showDashboard,
+  updateMetrics,
+  checkGlobalAlerts,
+  applyFilters,
+  showNotifications,
+  toggleFilterDrawer,
+  clearFilters,
+  filterExpiringOnly,
+  switchDashboardTab,
+  openModal,
+  closeModal,
+  resetPhotoState,
+  setPhotoItems,
+  fillFormFields,
+  resetFormFields,
+  collectFormData,
+  validateForm,
+  setupCardDelegation,
+  cycleCardPhoto,
+  triggerFileInput,
+  handleFileSelect,
+  showDeleteConfirm,
+  closeDeleteDialog,
+  getDeleteTarget,
+  photoItems,
+  removedExistingUrls
+} from './ui.js';
+import { initImport } from './import.js';
 
-/* ── AUTH WIRING ───────────────────────────── */
+let inventory = [];
+let activeFilterTab = "all";
+let activeEditId = null;
+let unsubscribe = null;
+
+/* ── AUTH ──────────────────────────────────── */
 onAuthChange(function (user) {
   if (user) {
     showDashboard();
+    diagnosticAuth();
     startListening();
   } else {
     stopListening();
@@ -25,35 +74,54 @@ function startListening() {
       checkGlobalAlerts(inventory);
       applyFilters(inventory, activeFilterTab);
     },
-    function () {
-      showAlert("Error de conexi\u00F3n con Firestore. Verifica tu conexi\u00F3n a internet.", "error");
+    function (err) {
+      showAlert(getDatabaseErrorMessage(err), "error");
     }
   );
 }
 
 function stopListening() {
   if (unsubscribe) {
-    unsubscribe();
+    removeRealtimeChannel(unsubscribe);
     unsubscribe = null;
   }
 }
 
-/* ── LOGIN FORM ────────────────────────────── */
+/* ── DIAGNOSTICO ────────────────────────────── */
+async function diagnosticAuth() {
+  try {
+    var session = await getCurrentSession();
+    console.log('[Auth] Session:', session ? 'activa' : 'none');
+    if (session) {
+      console.log('[Auth] User:', session.user.email);
+      console.log('[Auth] Expires:', new Date(session.expires_at * 1000));
+    }
+    return session;
+  } catch (e) {
+    console.error('[Auth] Error getting session:', e);
+    return null;
+  }
+}
+
+/* ── LOGIN ─────────────────────────────────── */
 document.getElementById("loginForm").addEventListener("submit", async function (e) {
   e.preventDefault();
   document.getElementById("loginSpinner").classList.remove("hidden");
   document.getElementById("loginErrorMessage").classList.add("hidden");
 
   try {
-    await login(
+    var result = await login(
       document.getElementById("loginEmail").value.trim(),
       document.getElementById("loginPassword").value
     );
+    if (result.error) throw result.error;
+    console.log('[Login] Exitoso');
   } catch (err) {
     document.getElementById("loginSpinner").classList.add("hidden");
     document.getElementById("loginErrorText").textContent = getAuthErrorMessage(err);
     document.getElementById("loginErrorMessage").classList.remove("hidden");
     document.getElementById("loginErrorMessage").classList.add("flex");
+    console.error('[Login] Error:', err);
   }
   document.getElementById("loginSpinner").classList.add("hidden");
 });
@@ -118,7 +186,6 @@ document.getElementById("configBtn").addEventListener("click", function () {
 document.getElementById("configCloseBtn").addEventListener("click", function () {
   closeModal("configModal");
 });
-/* Import handlers are set up in app/import.js */
 
 /* ── DELETE DIALOG ─────────────────────────── */
 document.getElementById("deleteCancelBtn").addEventListener("click", closeDeleteDialog);
@@ -128,14 +195,14 @@ document.getElementById("confirmDeleteBtn").addEventListener("click", async func
   try {
     await deleteVehicle(target.id);
     closeDeleteDialog();
-    showAlert("Veh\u00EDculo " + target.placa + " eliminado.", "success");
+    showAlert("Vehiculo " + target.placa + " eliminado.", "success");
   } catch (err) {
-    showAlert(getFirestoreErrorMessage(err), "error");
+    showAlert(getDatabaseErrorMessage(err), "error");
     closeDeleteDialog();
   }
 });
 
-/* ── CARD EVENT DELEGATION ─────────────────── */
+/* ── CARD DELEGATION ───────────────────────── */
 setupCardDelegation({
   onEdit: function (id) {
     for (var vi = 0; vi < inventory.length; vi++) {
@@ -150,7 +217,7 @@ setupCardDelegation({
   }
 });
 
-/* ── ESC KEY (global) ──────────────────────── */
+/* ── ESC ───────────────────────────────────── */
 document.addEventListener("keydown", function (e) {
   if (e.key === "Escape") {
     closeModal("vehicleModal");
@@ -170,7 +237,7 @@ function openAddModal() {
   activeEditId = null;
   resetFormFields();
   resetPhotoState();
-  document.getElementById("modalTitle").textContent = "Nuevo Veh\u00EDculo";
+  document.getElementById("modalTitle").textContent = "Nuevo Vehiculo";
   openModal("vehicleModal");
 }
 
@@ -179,7 +246,7 @@ function openEditModal(vehicle) {
   resetFormFields();
   fillFormFields(vehicle);
   setPhotoItems(vehicle.fotos || []);
-  document.getElementById("modalTitle").textContent = "Editar Veh\u00EDculo";
+  document.getElementById("modalTitle").textContent = "Editar Vehiculo";
   openModal("vehicleModal");
 }
 
@@ -197,46 +264,68 @@ async function saveVehicle() {
   saveBtn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>';
 
   try {
-    /* Compress new photos to base64 */
+    var user = getCurrentUser();
+    var vehicleId = activeEditId || (crypto.randomUUID ? crypto.randomUUID() : generateUUID());
+
     var finalFotos = [];
+    var photosToDelete = removedExistingUrls.slice();
+
     for (var pi = 0; pi < photoItems.length; pi++) {
       var item = photoItems[pi];
       if (item.isExisting) {
         finalFotos.push(item.src);
       } else if (item.file) {
         try {
-          var b64 = await compressImage(item.file);
-          finalFotos.push(b64);
+          var result = await uploadPhoto(item.file, vehicleId, finalFotos.length);
+          finalFotos.push(result.path);
         } catch (e) {
-          showAlert("Error comprimiendo foto: " + e.message, "error");
+          showAlert("Error subiendo foto: " + (e && e.message ? e.message : e), "error");
         }
       }
     }
-    data.fotos = finalFotos.filter(function (url) { return url && url.trim() !== ""; });
 
-    /* Track who modified */
-    var user = getCurrentUser();
-    if (user && user.email) {
-      if (activeEditId) data.lastModifiedBy = user.email;
-      else data.createdByEmail = user.email;
+    if (photosToDelete.length > 0) {
+      for (var di = 0; di < photosToDelete.length; di++) {
+        var path = photosToDelete[di];
+        if (path && path.indexOf('data:') !== 0 && path.indexOf('http') !== 0) {
+          try { await deletePhoto(path); } catch (e) {}
+        }
+      }
     }
+
+    if (!activeEditId && user && user.email) {
+      data.createdByEmail = user.email;
+    }
+
+    data.fotos = finalFotos;
 
     if (activeEditId) {
       await updateVehicle(activeEditId, data);
-      showAlert("Veh\u00EDculo actualizado correctamente.", "success");
+      showAlert("Vehiculo actualizado correctamente.", "success");
     } else {
+      data.id = vehicleId;
       await addVehicle(data);
-      showAlert("Veh\u00EDculo agregado correctamente.", "success");
+      showAlert("Vehiculo agregado correctamente.", "success");
     }
 
     closeModal("vehicleModal");
     resetPhotoState();
   } catch (err) {
-    showAlert(getFirestoreErrorMessage(err), "error");
+    showAlert(getDatabaseErrorMessage(err), "error");
   } finally {
     saveBtn.disabled = false;
     saveBtn.innerHTML = "Guardar";
   }
 }
 
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
 
+/* ── IMPORT MODULE (backup/template/import) ─── */
+initImport(function () {
+  return inventory;
+});

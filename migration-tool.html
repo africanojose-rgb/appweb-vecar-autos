@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Migración: Firebase → Supabase</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 640px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      margin-bottom: 0.25rem;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 0.75rem;
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 0.5rem;
+      color: #e0e0e0;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+    textarea {
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      resize: vertical;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+    }
+    .btn-danger {
+      background: #dc2626;
+      color: white;
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: #b91c1c;
+    }
+    .btn-success {
+      background: #16a34a;
+      color: white;
+    }
+    .btn-success:hover:not(:disabled) {
+      background: #15803d;
+    }
+    .btn-warning {
+      background: #d97706;
+      color: white;
+    }
+    .btn-warning:hover:not(:disabled) {
+      background: #b45309;
+    }
+    .log {
+      background: #0a0a1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      line-height: 1.6;
+    }
+    .log .info { color: #60a5fa; }
+    .log .success { color: #34d399; }
+    .log .error { color: #f87171; }
+    .log .warning { color: #fbbf24; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .stat {
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      text-align: center;
+    }
+    .stat .num {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+    .stat .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: #888;
+      margin-top: 0.25rem;
+    }
+    .hidden { display: none; }
+    .flex-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .mt-2 { margin-top: 0.75rem; }
+    .mb-2 { margin-bottom: 0.75rem; }
+    .text-sm { font-size: 0.8rem; }
+    .text-center { text-align: center; }
+    .glow {
+      box-shadow: 0 0 0 1px rgba(59,130,246,0.1), 0 4px 12px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="text-center mb-2">
+      <h1>Migracion de Datos</h1>
+      <p class="subtitle">Firebase Firestore → Supabase PostgreSQL</p>
+    </div>
+
+    <!-- Step 1: Firebase Config -->
+    <div class="card" id="stepFirebase">
+      <h2>1. Conexion Firebase (origen)</h2>
+      <label>Firebase Config JSON</label>
+      <textarea id="firebaseConfig" rows="6" placeholder='Pega el contenido de firebase/config.js o el JSON:
+
+var firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "proyecto.firebaseapp.com",
+  ...
+};'></textarea>
+      <button class="btn btn-primary" id="btnConnectFirebase">Conectar Firebase</button>
+      <p id="firebaseStatus" class="text-sm mt-2" style="color:#888;">Esperando configuracion...</p>
+    </div>
+
+    <!-- Step 2: Supabase Config -->
+    <div class="card" id="stepSupabase">
+      <h2>2. Conexion Supabase (destino)</h2>
+      <label>Supabase URL</label>
+      <input type="text" id="supabaseUrl" placeholder="https://xxxxx.supabase.co" />
+      <label>Supabase Anon Key (Project Settings > API > anon public)</label>
+      <input type="password" id="supabaseAnonKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+      <label style="color:#fbbf24;">Email de usuario (para autenticacion y RLS):</label>
+      <input type="email" id="supabaseEmail" placeholder="admin@vecarautos.com" />
+      <label style="color:#fbbf24;">Contrasena:</label>
+      <input type="password" id="supabasePassword" placeholder="••••••••" />
+      <button class="btn btn-primary" id="btnConnectSupabase">Conectar Supabase</button>
+      <p id="supabaseStatus" class="text-sm mt-2" style="color:#888;">Esperando configuracion...</p>
+    </div>
+
+    <!-- Step 3: Stats & Migrate -->
+    <div class="card" id="stepMigrate" style="display:none;">
+      <h2>3. Resumen y Migracion</h2>
+      <div class="stats-grid">
+        <div class="stat">
+          <div class="num" id="firebaseCount">0</div>
+          <div class="label">Documentos en Firebase</div>
+        </div>
+        <div class="stat">
+          <div class="num" id="supabaseCount">0</div>
+          <div class="label">Registros en Supabase</div>
+        </div>
+      </div>
+
+      <div class="flex-row">
+        <button class="btn btn-warning" id="btnCountFirebase">Contar Firebase</button>
+        <button class="btn btn-primary" id="btnCreateTable">Crear Tabla vehiculos</button>
+        <button class="btn btn-primary" id="btnCreateBucket">Crear Bucket vehiculos</button>
+      </div>
+      <div class="flex-row mt-2">
+        <button class="btn btn-success" id="btnStartMigration">Iniciar Migracion</button>
+        <button class="btn btn-danger" id="btnClearSupabase">Limpiar Supabase</button>
+      </div>
+
+      <div class="log mt-2" id="logOutput">
+        <div class="info">Listo para migrar. Conecta Firebase y Supabase primero.</div>
+      </div>
+
+      <div class="flex-row mt-2">
+        <button class="btn btn-primary" id="btnDownloadReport" style="display:none;">Descargar Reporte</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+  <script>
+    var logEl = document.getElementById('logOutput');
+    var firebaseDb = null;
+    var supabaseClient = null;
+    var _supabaseUrl = '';
+    var _supabaseKey = '';
+    var _supabaseAccessToken = null;
+    var firebaseVehicles = [];
+    var migrationStats = { total: 0, success: 0, failed: 0, skipped: 0, photos: 0 };
+
+    function supabaseAuthHeaders() {
+      var token = _supabaseAccessToken || _supabaseKey;
+      return {
+        'apikey': _supabaseKey,
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      };
+    }
+
+    function supabaseRestUrl(path) {
+      return _supabaseUrl.replace(/\/+$/, '') + '/rest/v1/' + path.replace(/^\//, '');
+    }
+
+    function supabaseStorageUrl(path) {
+      return _supabaseUrl.replace(/\/+$/, '') + '/storage/v1/' + path.replace(/^\//, '');
+    }
+
+    function log(msg, type) {
+      var line = document.createElement('div');
+      line.className = type || 'info';
+      line.textContent = '> ' + msg;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function setStatus(elId, msg, color) {
+      var el = document.getElementById(elId);
+      if (el) { el.textContent = msg; if (color) el.style.color = color; }
+    }
+
+    function parseFirebaseConfig(text) {
+      var cleaned = text.trim();
+      if (cleaned.indexOf('{') !== 0) {
+        var match = cleaned.match(/\{[\s\S]*\}/);
+        if (match) cleaned = match[0];
+      }
+      try {
+        return JSON.parse(cleaned);
+      } catch (_) {}
+      try {
+        var fn = new Function('return ' + cleaned + ';');
+        return fn();
+      } catch (_) {
+        throw new Error('No se pudo interpretar la configuracion. Copia todo el contenido de firebase/config.js');
+      }
+    }
+
+    document.getElementById('btnConnectFirebase').addEventListener('click', function () {
+      var configText = document.getElementById('firebaseConfig').value.trim();
+      if (!configText) {
+        setStatus('firebaseStatus', 'Pega la configuracion de Firebase (JS o JSON).', '#f87171');
+        return;
+      }
+      try {
+        var config = parseFirebaseConfig(configText);
+        if (firebase.apps.length) {
+          firebase.apps.forEach(function (app) { app.delete(); });
+        }
+        firebase.initializeApp(config);
+        firebaseDb = firebase.firestore();
+        setStatus('firebaseStatus', 'Conectado a: ' + config.projectId, '#34d399');
+        log('Firebase conectado: ' + config.projectId, 'success');
+      } catch (e) {
+        setStatus('firebaseStatus', 'Error: ' + e.message, '#f87171');
+        log('Error Firebase: ' + e.message, 'error');
+      }
+    });
+
+    // Step 2: Connect Supabase
+    document.getElementById('btnConnectSupabase').addEventListener('click', async function () {
+      _supabaseUrl = document.getElementById('supabaseUrl').value.trim();
+      _supabaseKey = document.getElementById('supabaseAnonKey').value.trim();
+      var email = document.getElementById('supabaseEmail').value.trim();
+      var password = document.getElementById('supabasePassword').value;
+      if (!_supabaseUrl || !_supabaseKey) {
+        setStatus('supabaseStatus', 'Completa URL y Anon Key.', '#f87171');
+        return;
+      }
+      if (!email || !password) {
+        setStatus('supabaseStatus', 'Ingresa email y contrasena de Supabase Auth.', '#f87171');
+        return;
+      }
+      try {
+        supabaseClient = supabase.createClient(_supabaseUrl, _supabaseKey);
+        var authResult = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
+        if (authResult.error) throw authResult.error;
+        _supabaseAccessToken = authResult.data.session.access_token;
+        setStatus('supabaseStatus', 'Autenticado como: ' + email, '#34d399');
+        log('Supabase autenticado: ' + email, 'success');
+        document.getElementById('stepMigrate').style.display = 'block';
+        checkCounts();
+      } catch (e) {
+        setStatus('supabaseStatus', 'Error: ' + e.message, '#f87171');
+        log('Error Supabase: ' + e.message, 'error');
+      }
+    });
+
+    // Create table - show instructions
+    document.getElementById('btnCreateTable').addEventListener('click', function () {
+      if (!supabaseClient) { log('Conecta Supabase primero.', 'error'); return; }
+      log('--- INSTRUCCIONES ---', 'warning');
+      log('1. Ve a Supabase Dashboard > SQL Editor', 'info');
+      log('2. Abre el archivo scripts/migration.sql de este proyecto', 'info');
+      log('3. Pegalo en el SQL Editor y haz clic en RUN', 'info');
+      log('Tambien puedes hacer clic en el boton de abajo para copiar el comando basico:', 'info');
+      var basicSQL = "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";\nCREATE TABLE IF NOT EXISTS public.vehiculos (\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\n  marca TEXT NOT NULL,\n  linea TEXT NOT NULL,\n  version TEXT DEFAULT '',\n  placa TEXT NOT NULL,\n  anio INTEGER NOT NULL CHECK (anio >= 1900 AND anio <= 2100),\n  cilindraje TEXT DEFAULT '0',\n  color TEXT DEFAULT 'N/A',\n  transmision TEXT DEFAULT 'AT' CHECK (transmision IN ('AT', 'MC')),\n  kilometraje INTEGER DEFAULT 0,\n  matricula_ciudad TEXT DEFAULT 'Bogota',\n  precio_compra BIGINT DEFAULT 0,\n  precio_venta BIGINT NOT NULL CHECK (precio_venta > 0),\n  ubicacion TEXT DEFAULT '129',\n  soat_vence TEXT DEFAULT '',\n  rtm_vence TEXT DEFAULT '',\n  reporte BOOLEAN DEFAULT FALSE,\n  prenda BOOLEAN DEFAULT FALSE,\n  estado TEXT DEFAULT 'DISPONIBLE' CHECK (estado IN ('DISPONIBLE','VIRTUAL','SEPARADO','ALISTAMIENTO','VENDIDO')),\n  visible_web BOOLEAN DEFAULT TRUE,\n  descripcion TEXT DEFAULT '',\n  fotos TEXT[] DEFAULT '{}',\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n  updated_at TIMESTAMPTZ DEFAULT NOW(),\n  created_by UUID REFERENCES auth.users(id),\n  created_by_email TEXT,\n  last_modified_by UUID REFERENCES auth.users(id)\n);\nALTER TABLE public.vehiculos ENABLE ROW LEVEL SECURITY;";
+      log('(SQL basico listo para copiar)', 'info');
+      navigator.clipboard.writeText(basicSQL).then(function () {
+        log('SQL copiado al portapapeles. Pegalo en el SQL Editor de Supabase.', 'success');
+      }).catch(function () {
+        log('No se pudo copiar automaticamente. Usa el archivo scripts/migration.sql.', 'warning');
+      });
+    });
+
+    // Create Storage bucket
+    document.getElementById('btnCreateBucket').addEventListener('click', async function () {
+      if (!supabaseClient) { log('Conecta Supabase primero.', 'error'); return; }
+      try {
+        log('Creando bucket vehiculos...', 'info');
+        var result = await supabaseClient.storage.createBucket('vehiculos', { public: true });
+        if (result.error) throw result.error;
+        log('Bucket vehiculos creado exitosamente.', 'success');
+      } catch (e) {
+        if (e.message && e.message.indexOf('already exists') !== -1) {
+          log('El bucket vehiculos ya existe.', 'success');
+        } else {
+          log('Error creando bucket: ' + e.message, 'error');
+          log('Crealo manualmente: Supabase > Storage > New Bucket (nombre: vehiculos, publico: ON)', 'warning');
+        }
+      }
+    });
+
+    // Count Firebase documents
+    document.getElementById('btnCountFirebase').addEventListener('click', async function () {
+      if (!firebaseDb) { log('Conecta Firebase primero.', 'error'); return; }
+      try {
+        log('Contando documentos en Firebase...', 'info');
+        var snap = await firebaseDb.collection('vehiculos').get();
+        document.getElementById('firebaseCount').textContent = snap.size;
+        log('Firebase: ' + snap.size + ' documentos encontrados.', 'success');
+      } catch (e) {
+        log('Error contando Firebase: ' + e.message, 'error');
+      }
+    });
+
+    // Check counts
+    async function checkCounts() {
+      if (firebaseDb) {
+        try {
+          var snap = await firebaseDb.collection('vehiculos').get();
+          document.getElementById('firebaseCount').textContent = snap.size;
+        } catch (e) {}
+      }
+      if (_supabaseUrl && _supabaseKey) {
+        try {
+          var resp = await fetch(supabaseRestUrl('vehiculos') + '?select=id', {
+            headers: { 'apikey': _supabaseKey, 'Authorization': 'Bearer ' + _supabaseKey, 'Accept': 'application/json' }
+          });
+          if (resp.ok) {
+            var data = await resp.json();
+            document.getElementById('supabaseCount').textContent = Array.isArray(data) ? data.length : '0';
+          }
+        } catch (e) {}
+      }
+    }
+
+    // Clear Supabase table
+    document.getElementById('btnClearSupabase').addEventListener('click', async function () {
+      if (!_supabaseUrl || !_supabaseKey) { log('Conecta Supabase primero.', 'error'); return; }
+      if (!confirm('¿Eliminar TODOS los registros en Supabase? Esta accion es irreversible.')) return;
+
+      try {
+        log('Limpiando tabla vehiculos en Supabase...', 'warning');
+        var resp = await fetch(supabaseRestUrl('vehiculos'), {
+          method: 'DELETE',
+          headers: supabaseAuthHeaders()
+        });
+        if (!resp.ok) {
+          var errBody = await resp.text();
+          throw new Error(errBody || 'Error ' + resp.status);
+        }
+        log('Tabla limpiada.', 'success');
+        document.getElementById('supabaseCount').textContent = '0';
+      } catch (e) {
+        log('Error limpiando: ' + e.message, 'error');
+      }
+    });
+
+    // Main Migration
+    document.getElementById('btnStartMigration').addEventListener('click', async function () {
+      if (!firebaseDb || !supabaseClient) {
+        log('Conecta Firebase y Supabase primero.', 'error');
+        return;
+      }
+
+      var btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Migrando...';
+      migrationStats = { total: 0, success: 0, failed: 0, skipped: 0, photos: 0 };
+
+      try {
+        log('--- INICIANDO MIGRACION ---', 'warning');
+
+        // Fetch all from Firebase
+        log('Obteniendo datos de Firebase...', 'info');
+        var snap = await firebaseDb.collection('vehiculos').get();
+        migrationStats.total = snap.size;
+        log('Total documentos: ' + snap.size, 'info');
+        document.getElementById('firebaseCount').textContent = snap.size;
+
+        if (snap.size === 0) {
+          log('No hay datos para migrar.', 'warning');
+          btn.disabled = false;
+          btn.textContent = 'Iniciar Migracion';
+          return;
+        }
+
+        var processed = 0;
+        var batchSize = 10;
+
+        var docs = [];
+        snap.forEach(function (doc) { docs.push({ id: doc.id, data: doc.data() }); });
+
+        for (var i = 0; i < docs.length; i += batchSize) {
+          var batch = docs.slice(i, i + batchSize);
+          var promises = batch.map(function (doc) { return migrateDocument(doc); });
+          await Promise.allSettled(promises);
+          processed += batch.length;
+          log('Progreso: ' + processed + '/' + docs.length, 'info');
+        }
+
+        log('--- MIGRACION COMPLETADA ---', 'success');
+        log('Total: ' + migrationStats.total + ' | Exitosos: ' + migrationStats.success + ' | Fallidos: ' + migrationStats.failed + ' | Omitidos: ' + migrationStats.skipped + ' | Fotos migradas: ' + migrationStats.photos, 'success');
+        document.getElementById('btnDownloadReport').style.display = 'inline-flex';
+      } catch (e) {
+        log('Error durante migracion: ' + e.message, 'error');
+        console.error(e);
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Iniciar Migracion';
+      checkCounts();
+    });
+
+    async function migrateDocument(doc) {
+      var data = doc.data;
+      var firebaseId = doc.id;
+
+      try {
+        // Check if already migrated (by placa)
+        var existing = await supabaseClient.from('vehiculos').select('id').eq('placa', data.placa || '').maybeSingle();
+        if (existing.data) {
+          log('Saltando (ya existe placa=' + data.placa + '): ' + firebaseId, 'warning');
+          migrationStats.skipped++;
+          return;
+        }
+
+        // Migrate photos
+        var fotoUrls = [];
+        if (data.fotos && Array.isArray(data.fotos) && data.fotos.length > 0) {
+          log('Migrando ' + data.fotos.length + ' fotos para ' + (data.placa || firebaseId) + '...', 'info');
+          for (var j = 0; j < data.fotos.length; j++) {
+            var foto = data.fotos[j];
+            if (typeof foto === 'string' && foto.length > 100) {
+              try {
+                var result = await uploadBase64PhotoToSupabase(foto, firebaseId, j);
+                fotoUrls.push(result.path);
+                migrationStats.photos++;
+              } catch (photoErr) {
+                log('Error foto ' + j + ': ' + photoErr.message, 'warning');
+                fotoUrls.push(foto);
+              }
+            } else if (typeof foto === 'string' && foto.length > 0) {
+              fotoUrls.push(foto);
+            }
+          }
+        }
+
+        // Build vehicle record (camelCase → snake_case)
+        var vehicle = {
+          id: firebaseId,
+          marca: String(data.marca || '').toLowerCase(),
+          linea: String(data.linea || ''),
+          version: String(data.version || ''),
+          placa: String(data.placa || '').toUpperCase(),
+          anio: Number(data.anio) || 2024,
+          cilindraje: String(data.cilindraje || '0'),
+          color: String(data.color || 'N/A'),
+          transmision: (data.transmision === 'MC') ? 'MC' : 'AT',
+          kilometraje: Number(data.kilometraje) || 0,
+          matricula_ciudad: String(data.matriculaCiudad || data.matricula_ciudad || 'Bogota'),
+          precio_compra: Number(data.precioCompra || data.precio_compra) || 0,
+          precio_venta: Number(data.precioVenta || data.precio_venta) || 0,
+          ubicacion: String(data.ubicacion || '129'),
+          soat_vence: String(data.soatVence || data.soat_vence || ''),
+          rtm_vence: String(data.rtmVence || data.rtm_vence || ''),
+          reporte: (data.reporte === true || data.reporte === 'SI' || data.reporte === 'Si'),
+          prenda: (data.prenda === true || data.prenda === 'SI' || data.prenda === 'Si'),
+          estado: normalizeEstado(data.estado),
+          visible_web: data.visibleWeb !== false && data.visible_web !== false,
+          descripcion: String(data.descripcion || ''),
+          fotos: fotoUrls,
+          created_at: data.createdAt ? new Date(data.createdAt.seconds * 1000).toISOString() : new Date().toISOString(),
+          updated_at: data.updatedAt ? new Date(data.updatedAt.seconds * 1000).toISOString() : new Date().toISOString(),
+          created_by_email: String(data.createdByEmail || data.created_by_email || '')
+        };
+
+        var upsertResp = await fetch(supabaseRestUrl('vehiculos'), {
+          method: 'POST',
+          headers: Object.assign(supabaseAuthHeaders(), { 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+          body: JSON.stringify(vehicle)
+        });
+        if (!upsertResp.ok) {
+          var errTxt = await upsertResp.text();
+          throw new Error(errTxt || 'HTTP ' + upsertResp.status);
+        }
+
+        migrationStats.success++;
+        log('Migrado: ' + vehicle.marca + ' ' + vehicle.placa + ' (' + firebaseId + ')', 'success');
+      } catch (e) {
+        migrationStats.failed++;
+        log('Fallido: ' + firebaseId + ' - ' + (e.message || 'Error desconocido'), 'error');
+      }
+    }
+
+    function normalizeEstado(est) {
+      var validos = ['DISPONIBLE', 'VIRTUAL', 'SEPARADO', 'ALISTAMIENTO', 'VENDIDO'];
+      var upper = String(est || 'DISPONIBLE').toUpperCase().trim();
+      return validos.indexOf(upper) !== -1 ? upper : 'DISPONIBLE';
+    }
+
+    async function uploadBase64PhotoToSupabase(base64Data, vehicleId, index) {
+      var parts = base64Data.split(',');
+      var mime = parts[0].match(/:(.*?);/)[1];
+      var ext = mime.split('/')[1] || 'jpg';
+      var raw = atob(parts[1]);
+      var ab = new ArrayBuffer(raw.length);
+      var ia = new Uint8Array(ab);
+      for (var i = 0; i < raw.length; i++) ia[i] = raw.charCodeAt(i);
+      var blob = new Blob([ab], { type: mime });
+
+      var filePath = vehicleId + '/' + index + '.' + ext;
+      var uploadResp = await fetch(supabaseStorageUrl('object/vehiculos/' + filePath), {
+        method: 'PUT',
+        headers: {
+          'apikey': _supabaseKey,
+          'Authorization': 'Bearer ' + _supabaseKey,
+          'Content-Type': mime,
+          'x-upsert': 'true'
+        },
+        body: blob
+      });
+      if (!uploadResp.ok) {
+        var errTxt = await uploadResp.text();
+        throw new Error(errTxt || 'HTTP ' + uploadResp.status);
+      }
+      return { path: filePath };
+    }
+
+    // Download Report
+    document.getElementById('btnDownloadReport').addEventListener('click', function () {
+      var text = 'Reporte de Migracion\n';
+      text += '===================\n';
+      text += 'Total: ' + migrationStats.total + '\n';
+      text += 'Exitosos: ' + migrationStats.success + '\n';
+      text += 'Fallidos: ' + migrationStats.failed + '\n';
+      text += 'Omitidos: ' + migrationStats.skipped + '\n';
+      text += 'Fotos migradas: ' + migrationStats.photos + '\n';
+      text += '===================\n';
+
+      var blob = new Blob([text], { type: 'text/plain' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'migration-report.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Load Firebase config from URL params (dev convenience)
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var fc = params.get('firebaseConfig');
+      if (fc) {
+        try {
+          document.getElementById('firebaseConfig').value = atob(decodeURIComponent(fc));
+        } catch(e) {}
+      }
+      var su = params.get('supabaseUrl');
+      if (su) document.getElementById('supabaseUrl').value = su;
+      var sk = params.get('supabaseKey');
+      if (sk) document.getElementById('supabaseAnonKey').value = sk;
+    })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</body>
+</html>

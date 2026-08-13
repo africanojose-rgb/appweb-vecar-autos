@@ -5,11 +5,12 @@
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
-    script-src 'self' https://www.gstatic.com https://cdn.sheetjs.com;
+    script-src 'self' https://cdn.sheetjs.com;
     style-src 'self' https://fonts.googleapis.com 'unsafe-inline';
     font-src https://fonts.gstatic.com;
-    img-src 'self' data: https://images.unsplash.com https://www.gstatic.com;
-    connect-src https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://firestore.googleapis.com;
+    img-src 'self' data: https://images.unsplash.com https://*.supabase.co;
+    connect-src https://*.supabase.co wss://*.supabase.co;
+    worker-src blob:;
     form-action 'self';
     base-uri 'self';
     object-src 'none';
@@ -21,10 +22,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
   <link href="styles/main.css" rel="stylesheet"/>
 
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" integrity="sha384-ZaR6mWzmJtrRibZ1Vm7SoHFr8OXjyAuGAXalGDKqbxFT18oi/z+oZLIRFkpeNor1" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" integrity="sha384-I1LYojsZ5RM1cOda44Z2h42Qa6YfsQ1XkXxREnhp4ueYBR/4d1pG1K+NZM537Vsj" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" integrity="sha384-Ke0FJhH7LyRqDxZ0wt+/OXV38yfQVu7g9VPEEGjYmB4RVOY/ta04uecRhsMwT7V3" crossorigin="anonymous"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <script src="supabase/supabase.umd.js"></script>
 </head>
 <body class="min-h-screen pb-24">
 
@@ -407,7 +406,7 @@
           <span class="material-symbols-outlined text-electric-blue">database</span> Importar desde Archivo
         </h3>
         <p class="text-body-sm text-on-secondary-container">
-          Sube un archivo Excel (.xlsx) o SQL con sentencias INSERT INTO para alimentar la base de datos en Firestore.
+          Sube un archivo Excel (.xlsx) o SQL con sentencias INSERT INTO para alimentar la base de datos.
         </p>
 
         <!-- Format Toggle -->
@@ -464,13 +463,13 @@
       </div>
 
       <div class="glass-card p-6 rounded-2xl space-y-4 border-outline-variant/30">
-        <h3 class="text-sm font-bold text-on-surface uppercase tracking-wider">Conexión Firebase</h3>
+        <h3 class="text-sm font-bold text-on-surface uppercase tracking-wider">Conexión Supabase</h3>
         <p class="text-xs text-on-secondary-container leading-relaxed">
-          Este panel está conectado a <strong class="text-on-surface">Firebase Firestore</strong> con autenticación por email/contraseña. Los datos se sincronizan en tiempo real.
+          Este panel está conectado a <strong class="text-on-surface">Supabase PostgreSQL</strong> con autenticación por email/contraseña. Los datos se sincronizan en tiempo real.
         </p>
         <div class="flex items-center justify-between pt-2 border-t border-outline-variant/20 text-xs text-on-secondary-container">
           <span>Proyecto:</span>
-          <span class="font-bold text-electric-blue">vercar-autos</span>
+          <span class="font-bold text-electric-blue" id="supabaseProjectDisplay">—</span>
         </div>
       </div>
     </div>
@@ -491,13 +490,6 @@
     </div>
   </div>
 
-  <script src="firebase/config.js"></script>
-  <script src="firebase/auth.js"></script>
-  <script src="firebase/firestore.js"></script>
-  <script src="firebase/storage.js"></script>
-  <script src="app/utils.js"></script>
-  <script src="app/ui.js"></script>
-  <script src="app/main.js"></script>
-  <script src="app/import.js"></script>
+  <script type="module" src="app/main.js"></script>
 </body>
 </html>

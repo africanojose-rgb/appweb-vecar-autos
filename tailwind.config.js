@@ -1,6 +1,6 @@
 module.exports = {
   darkMode: "class",
-  content: ["./index.html", "./app/**/*.js", "./firebase/**/*.js"],
+  content: ["./index.html", "./app/**/*.js", "./supabase/**/*.js"],
   theme: {
     extend: {
       colors: {
