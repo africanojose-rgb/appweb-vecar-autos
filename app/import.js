@@ -469,7 +469,7 @@ async function startImport(file) {
       html += '<div class="mt-2 text-xs text-red-400 space-y-0.5">' +
         '<span class="font-bold">' + results.errors.length + ' errores:</span>';
       for (var ei = 0; ei < results.errors.length; ei++) {
-        html += '<div>• ' + results.errors[ei].placa + ': ' + sanitizeHTML(results.errors[ei].error) + '</div>';
+        html += '<div>• ' + sanitizeHTML(results.errors[ei].placa) + ': ' + sanitizeHTML(results.errors[ei].error) + '</div>';
       }
       html += '</div>';
     }

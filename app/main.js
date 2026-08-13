@@ -121,7 +121,6 @@ document.getElementById("loginForm").addEventListener("submit", async function (
     document.getElementById("loginErrorText").textContent = getAuthErrorMessage(err);
     document.getElementById("loginErrorMessage").classList.remove("hidden");
     document.getElementById("loginErrorMessage").classList.add("flex");
-    console.error('[Login] Error:', err);
   }
   document.getElementById("loginSpinner").classList.add("hidden");
 });

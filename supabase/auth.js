@@ -15,11 +15,21 @@ export async function logout() {
 export function onAuthChange(callback) {
   var called = false;
 
+  function notify() {
+    if (typeof callback === 'function') {
+      callback(_currentUser);
+    }
+  }
+
   var subscription = supabaseClient.auth.onAuthStateChange(function (event, session) {
     _currentUser = session ? session.user : null;
-    if (event !== 'INITIAL_SESSION' && !called) {
-      called = true;
-      callback(_currentUser);
+    if (event === 'INITIAL_SESSION') {
+      if (!called) {
+        called = true;
+        notify();
+      }
+    } else {
+      notify();
     }
   });
 
@@ -28,7 +38,7 @@ export function onAuthChange(callback) {
     _currentUser = session ? session.user : null;
     if (!called) {
       called = true;
-      callback(_currentUser);
+      notify();
     }
   });
 
