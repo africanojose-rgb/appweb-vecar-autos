@@ -58,9 +58,7 @@ function initApp() {
   try {
     onAuthChange(function (user) {
   if (user) {
-    showDashboard();
-    diagnosticAuth();
-    startListening();
+    handleAuthenticatedUser();
   } else {
     stopListening();
     inventory = [];
@@ -88,6 +86,12 @@ function stopListening() {
     removeRealtimeChannel(unsubscribe);
     unsubscribe = null;
   }
+}
+
+function handleAuthenticatedUser() {
+  showDashboard();
+  diagnosticAuth();
+  startListening();
 }
 
 /* ── DIAGNOSTICO ────────────────────────────── */
@@ -124,6 +128,7 @@ document.getElementById("loginForm").addEventListener("submit", async function (
     );
     if (result.error) throw result.error;
     console.log('[Login] Exitoso');
+    handleAuthenticatedUser();
   } catch (err) {
     errorText.textContent = getAuthErrorMessage(err);
     errorBox.classList.remove("hidden");

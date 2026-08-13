@@ -18,16 +18,20 @@ export let removedExistingUrls = [];
 
 /* ── VIEW TOGGLES ──────────────────────────── */
 export function showLogin() {
-  document.getElementById("loginView").classList.remove("hidden");
+  var loginView = document.getElementById("loginView");
+  if (loginView) loginView.classList.remove("hidden");
   var dash = document.getElementById("mainDashboardView");
+  if (!dash) return;
   dash.classList.add("hidden");
   dash.classList.remove("opacity-100");
   dash.classList.add("opacity-0");
 }
 
 export function showDashboard() {
-  document.getElementById("loginView").classList.add("hidden");
+  var loginView = document.getElementById("loginView");
+  if (loginView) loginView.classList.add("hidden");
   var dash = document.getElementById("mainDashboardView");
+  if (!dash) return;
   dash.classList.remove("hidden");
   requestAnimationFrame(function () {
     dash.classList.remove("opacity-0");
