@@ -137,7 +137,7 @@ function renderCardContent(item, fullName, safePlaca, dotsHtml, fotoCount, soatD
     '<div class="w-[38%] relative h-40 cursor-pointer group" data-action="cycle-photo">' +
       '<img id="img_' + safePlaca + '" data-active-idx="0" class="w-full h-full object-cover transition-opacity duration-300" src="' + sanitizeHTML(sanitizeUrl(fotoSrc)) + '" alt="' + sanitizeHTML(fullName) + '" loading="lazy">' +
       '<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>' +
-      '<span id="photoCount_' + safePlaca + '" class="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-[9px] text-white px-1.5 py-0.5 rounded-full font-bold">1/' + fotoCount + '</span>' +
+      '<span id="photoCount_' + safePlaca + '" class="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-[9px] text-white px-1.5 py-0.5 rounded-full font-bold"' + (fotoCount > 0 ? '' : ' style="display:none"') + '>1/' + fotoCount + '</span>' +
       '<div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">' + dotsHtml + '</div>' +
       '<span class="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-[9px] text-white px-1.5 py-0.5 rounded font-mono tracking-wider">' + sanitizeHTML(safePlaca) + '</span>' +
     '</div>' +

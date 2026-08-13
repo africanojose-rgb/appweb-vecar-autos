@@ -79,6 +79,8 @@ CREATE POLICY "Eliminacion: solo autenticados" ON public.vehiculos
 
 -- 7. Políticas para Storage (ejecutar en SQL Editor también)
 -- Bucket: vehiculos (crear manualmente en Storage > New Bucket)
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
 DROP POLICY IF EXISTS "Lectura publica storage" ON storage.objects;
 CREATE POLICY "Lectura publica storage" ON storage.objects
   FOR SELECT
@@ -86,8 +88,8 @@ CREATE POLICY "Lectura publica storage" ON storage.objects
 
 DROP POLICY IF EXISTS "Subida autenticada storage" ON storage.objects;
 CREATE POLICY "Subida autenticada storage" ON storage.objects
-  FOR INSERT
-  WITH CHECK (bucket_id = 'vehiculos' AND auth.role() = 'authenticated');
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'vehiculos');
 
 DROP POLICY IF EXISTS "Eliminacion autenticada storage" ON storage.objects;
 CREATE POLICY "Eliminacion autenticada storage" ON storage.objects

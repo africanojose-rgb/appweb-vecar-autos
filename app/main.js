@@ -14,7 +14,7 @@ import {
   deleteVehicle,
   getDatabaseErrorMessage
 } from '../supabase/database.js';
-import { uploadPhoto, deletePhoto } from '../supabase/storage.js';
+import { uploadPhoto, deletePhoto, getPhotoUrl, pathFromPublicUrl } from '../supabase/storage.js';
 import { showAlert } from './utils.js';
 import {
   showLogin,
@@ -274,19 +274,16 @@ async function saveVehicle() {
       if (item.isExisting) {
         finalFotos.push(item.src);
       } else if (item.file) {
-        try {
-          var result = await uploadPhoto(item.file, vehicleId, finalFotos.length);
-          finalFotos.push(result.path);
-        } catch (e) {
-          showAlert("Error subiendo foto: " + (e && e.message ? e.message : e), "error");
-        }
+        var uploadResult = await uploadPhoto(item.file, vehicleId, finalFotos.length);
+        var publicUrl = uploadResult.url || getPhotoUrl(uploadResult.path);
+        finalFotos.push(publicUrl);
       }
     }
 
     if (photosToDelete.length > 0) {
       for (var di = 0; di < photosToDelete.length; di++) {
-        var path = photosToDelete[di];
-        if (path && path.indexOf('data:') !== 0 && path.indexOf('http') !== 0) {
+        var path = pathFromPublicUrl(photosToDelete[di]) || photosToDelete[di];
+        if (path && path.indexOf('data:') !== 0 && path.indexOf('blob:') !== 0) {
           try { await deletePhoto(path); } catch (e) {}
         }
       }

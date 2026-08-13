@@ -80,3 +80,11 @@ export function getPhotoUrl(path) {
     .getPublicUrl(path);
   return result.data.publicUrl;
 }
+
+export function pathFromPublicUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  var marker = '/object/public/' + STORAGE_BUCKET + '/';
+  var idx = url.indexOf(marker);
+  if (idx === -1) return '';
+  return url.slice(idx + marker.length);
+}
