@@ -2,14 +2,35 @@ import { supabaseClient } from './config.js';
 
 let _currentUser = null;
 
+var NETWORK_TIMEOUT_MS = 15000;
+
+function withTimeout(promise, ms) {
+  var timer;
+  return Promise.race([
+    promise,
+    new Promise(function (_, reject) {
+      timer = setTimeout(function () {
+        reject(new Error('network_timeout'));
+      }, ms);
+    })
+  ]).finally(function () {
+    clearTimeout(timer);
+  });
+}
+
 export function login(email, password) {
-  return supabaseClient.auth.signInWithPassword({ email: email, password: password });
+  return withTimeout(
+    supabaseClient.auth.signInWithPassword({ email: email, password: password }),
+    NETWORK_TIMEOUT_MS
+  );
 }
 
 export async function logout() {
-  var result = await supabaseClient.auth.signOut();
-  if (!result.error) _currentUser = null;
-  return result;
+  try {
+    return await withTimeout(supabaseClient.auth.signOut(), NETWORK_TIMEOUT_MS);
+  } finally {
+    _currentUser = null;
+  }
 }
 
 export function onAuthChange(callback) {
@@ -69,7 +90,11 @@ export function getAuthErrorMessage(error) {
     'over_email_send_rate_limit': 'Demasiados intentos. Espera un momento.',
     'over_request_rate_limit': 'Demasiados intentos. Espera un momento.',
     'network_error': 'Error de conexion. Verifica tu internet.',
+    'network_timeout': 'Error de conexion. El servidor no respondio a tiempo.',
     'weak_password': 'La contrasena es debil. Usa al menos 6 caracteres.'
   };
+  if (msg.indexOf('network') !== -1 || msg.indexOf('fetch') !== -1 || msg === 'network_timeout') {
+    return 'Error de conexion. Verifica tu internet.';
+  }
   return map[msg] || map[code] || 'Credenciales invalidas. Verifica tus datos.';
 }

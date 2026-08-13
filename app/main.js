@@ -42,6 +42,7 @@ import {
   showDeleteConfirm,
   closeDeleteDialog,
   getDeleteTarget,
+  clearDashboard,
   photoItems,
   removedExistingUrls
 } from './ui.js';
@@ -53,7 +54,9 @@ let activeEditId = null;
 let unsubscribe = null;
 
 /* ── AUTH ──────────────────────────────────── */
-onAuthChange(function (user) {
+function initApp() {
+  try {
+    onAuthChange(function (user) {
   if (user) {
     showDashboard();
     diagnosticAuth();
@@ -106,8 +109,13 @@ async function diagnosticAuth() {
 /* ── LOGIN ─────────────────────────────────── */
 document.getElementById("loginForm").addEventListener("submit", async function (e) {
   e.preventDefault();
-  document.getElementById("loginSpinner").classList.remove("hidden");
-  document.getElementById("loginErrorMessage").classList.add("hidden");
+  var spinner = document.getElementById("loginSpinner");
+  var errorBox = document.getElementById("loginErrorMessage");
+  var errorText = document.getElementById("loginErrorText");
+
+  spinner.classList.remove("hidden");
+  errorBox.classList.add("hidden");
+  errorBox.classList.remove("flex");
 
   try {
     var result = await login(
@@ -117,18 +125,53 @@ document.getElementById("loginForm").addEventListener("submit", async function (
     if (result.error) throw result.error;
     console.log('[Login] Exitoso');
   } catch (err) {
-    document.getElementById("loginSpinner").classList.add("hidden");
-    document.getElementById("loginErrorText").textContent = getAuthErrorMessage(err);
-    document.getElementById("loginErrorMessage").classList.remove("hidden");
-    document.getElementById("loginErrorMessage").classList.add("flex");
+    errorText.textContent = getAuthErrorMessage(err);
+    errorBox.classList.remove("hidden");
+    errorBox.classList.add("flex");
+  } finally {
+    spinner.classList.add("hidden");
   }
-  document.getElementById("loginSpinner").classList.add("hidden");
 });
 
 /* ── LOGOUT ────────────────────────────────── */
 document.getElementById("logoutBtn").addEventListener("click", async function () {
-  try { await logout(); } catch (e) {}
+  setLogoutLoading(true);
+  stopListening();
+  try {
+    await logout();
+  } catch (err) {
+    console.error('[Logout] Error:', err);
+    showAlert(getAuthErrorMessage(err), "error");
+  } finally {
+    inventory = [];
+    cleanupDashboard();
+    setLogoutLoading(false);
+    showLogin();
+  }
 });
+
+function setLogoutLoading(on) {
+  var btn = document.getElementById("logoutBtn");
+  var spinner = document.getElementById("logoutSpinner");
+  if (!btn) return;
+  btn.disabled = on;
+  if (spinner) spinner.classList.toggle("hidden", !on);
+}
+
+function cleanupDashboard() {
+  clearDashboard();
+  closeModal("vehicleModal");
+  closeModal("configModal");
+  closeDeleteDialog();
+  resetPhotoState();
+  resetFormFields();
+  clearFilters();
+  var errorBox = document.getElementById("loginErrorMessage");
+  if (errorBox) {
+    errorBox.classList.add("hidden");
+    errorBox.classList.remove("flex");
+  }
+}
 
 /* ── NOTIFICATIONS ─────────────────────────── */
 document.getElementById("notifBtn").addEventListener("click", function () {
@@ -321,6 +364,15 @@ function generateUUID() {
 }
 
 /* ── IMPORT MODULE (backup/template/import) ─── */
-initImport(function () {
-  return inventory;
-});
+    initImport(function () {
+      return inventory;
+    });
+  } catch (err) {
+    console.error('[Init] Error:', err);
+  } finally {
+    var spinner = document.getElementById("loginSpinner");
+    if (spinner) spinner.classList.add("hidden");
+  }
+}
+
+initApp();

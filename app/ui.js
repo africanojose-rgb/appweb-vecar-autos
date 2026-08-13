@@ -35,6 +35,13 @@ export function showDashboard() {
   });
 }
 
+export function clearDashboard() {
+  var container = document.getElementById("inventoryContainer");
+  if (container) container.innerHTML = "";
+  var emptyState = document.getElementById("emptyState");
+  if (emptyState) emptyState.classList.add("hidden");
+}
+
 /* ── ALERTS BANNER ─────────────────────────── */
 export function checkGlobalAlerts(vehicles) {
   var expired = 0;
